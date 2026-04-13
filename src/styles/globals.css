@@ -48,6 +48,13 @@ html {
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
+/* Hide Vercel toolbar/deployment widget */
+[data-vercel-toolbar],
+#__vercel-toolbar,
+#vercel-live-feedback,
+.vercel-live-feedback-wrapper,
+[id^="__vercel"] { display: none !important; }
+
 /* Animations */
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(16px); }

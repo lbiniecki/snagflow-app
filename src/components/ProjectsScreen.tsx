@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useStore } from "@/lib/store";
 import { projects as projectsApi } from "@/lib/api";
-import { LogOut, Plus, X } from "lucide-react";
+import { LogOut, Plus, X, Sparkles } from "lucide-react";
 import BottomNav from "./BottomNav";
 
 export default function ProjectsScreen() {
@@ -63,9 +63,14 @@ export default function ProjectsScreen() {
           <h2 className="text-lg font-bold">Projects</h2>
           <p className="text-xs text-[var(--text3)]">Welcome back{user?.email ? `, ${user.email.split("@")[0]}` : ""}</p>
         </div>
-        <button onClick={logout} className="p-2.5 rounded-full hover:bg-[var(--bg3)] transition-colors text-[var(--text2)]">
-          <LogOut className="w-5 h-5" />
-        </button>
+        <div className="flex items-center gap-1">
+          <button onClick={() => setScreen("pricing")} className="px-3 py-1.5 rounded-full bg-brand/10 text-brand text-[11px] font-semibold hover:bg-brand/20 transition-colors flex items-center gap-1">
+            <Sparkles className="w-3.5 h-3.5" /> Upgrade
+          </button>
+          <button onClick={logout} className="p-2.5 rounded-full hover:bg-[var(--bg3)] transition-colors text-[var(--text2)]">
+            <LogOut className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
       {/* Content */}
@@ -169,7 +174,7 @@ export default function ProjectsScreen() {
         </div>
       )}
 
-      <BottomNav active="projects" />
+      {!showModal && <BottomNav active="projects" />}
     </div>
   );
 }

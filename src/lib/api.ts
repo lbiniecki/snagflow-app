@@ -1,5 +1,5 @@
 /**
- * SnagFlow API Client
+ * VoxSite API Client
  * Typed wrapper for all backend endpoints
  */
 
@@ -45,16 +45,16 @@ let accessToken: string | null = null;
 export function setToken(token: string | null) {
   accessToken = token;
   if (token) {
-    localStorage.setItem("snagflow_token", token);
+    localStorage.setItem("voxsite_token", token);
   } else {
-    localStorage.removeItem("snagflow_token");
+    localStorage.removeItem("voxsite_token");
   }
 }
 
 export function getToken(): string | null {
   if (accessToken) return accessToken;
   if (typeof window !== "undefined") {
-    accessToken = localStorage.getItem("snagflow_token");
+    accessToken = localStorage.getItem("voxsite_token");
   }
   return accessToken;
 }
@@ -196,6 +196,16 @@ export const snags = {
   delete(id: string) {
     return apiFetch<void>(`/snags/${id}`, { method: "DELETE" });
   },
+
+  closeWithPhoto(id: string, photo: File) {
+    const form = new FormData();
+    form.append("status", "closed");
+    form.append("photo", photo);
+    return apiFetch<Snag>(`/snags/${id}/close`, {
+      method: "POST",
+      body: form,
+    });
+  },
 };
 
 // ─── Transcription ────────────────────────────────────────────
@@ -212,10 +222,17 @@ export const transcription = {
 
 // ─── Reports ──────────────────────────────────────────────────
 export const reports = {
-  async downloadPdf(projectId: string) {
+  async downloadPdf(projectId: string, opts?: { weather?: string; visitNo?: string }) {
     const token = getToken();
+    const params = new URLSearchParams({
+      include_closed: "true",
+      include_photos: "true",
+    });
+    if (opts?.weather) params.set("weather", opts.weather);
+    if (opts?.visitNo) params.set("visit_no", opts.visitNo);
+
     const res = await fetch(
-      `${API_BASE}/reports/${projectId}?include_closed=true&include_photos=true`,
+      `${API_BASE}/reports/${projectId}?${params}`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
     if (!res.ok) throw new Error("Failed to generate report");
@@ -223,7 +240,7 @@ export const reports = {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `snagging-report.pdf`;
+    a.download = `site-visit-report.pdf`;
     a.click();
     URL.revokeObjectURL(url);
   },

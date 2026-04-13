@@ -2,13 +2,13 @@ import type { Metadata, Viewport } from "next";
 import "../styles/globals.css";
 
 export const metadata: Metadata = {
-  title: "SnagFlow — Site Snagging, Simplified",
+  title: "VoxSite — Site Snagging, Simplified",
   description: "Capture construction snags, generate professional reports. Mobile-first SaaS.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "SnagFlow",
+    title: "VoxSite",
   },
 };
 

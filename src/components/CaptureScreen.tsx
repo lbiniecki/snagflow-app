@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { useStore } from "@/lib/store";
 import { snags as snagsApi, transcription } from "@/lib/api";
 import { useAudioRecorder } from "@/lib/useAudioRecorder";
+import { compressImage } from "@/lib/compressImage";
 import { ChevronLeft, Camera, Mic, X } from "lucide-react";
 import clsx from "clsx";
 
@@ -15,7 +16,7 @@ const PRIORITY_STYLES = {
 
 export default function CaptureScreen() {
   const { currentProject, setScreen, setSnags, snags, showToast } = useStore();
-  const { isRecording, startRecording, stopRecording, error: micError } = useAudioRecorder();
+  const { isRecording, secondsLeft, startRecording, stopRecording, error: micError } = useAudioRecorder();
 
   const [note, setNote] = useState("");
   const [location, setLocation] = useState("");
@@ -24,16 +25,36 @@ export default function CaptureScreen() {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
+  const [compressing, setCompressing] = useState(false);
+  const [micTarget, setMicTarget] = useState<"note" | "location" | null>(null);
 
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const handlePhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setPhoto(file);
-    const reader = new FileReader();
-    reader.onload = (ev) => setPhotoPreview(ev.target?.result as string);
-    reader.readAsDataURL(file);
+
+    // Compress before storing
+    setCompressing(true);
+    try {
+      const compressed = await compressImage(file);
+      setPhoto(compressed);
+      const reader = new FileReader();
+      reader.onload = (ev) => setPhotoPreview(ev.target?.result as string);
+      reader.readAsDataURL(compressed);
+      const savedKB = Math.round((file.size - compressed.size) / 1024);
+      if (savedKB > 50) {
+        showToast(`Photo compressed (saved ${savedKB > 1024 ? (savedKB / 1024).toFixed(1) + "MB" : savedKB + "KB"})`);
+      }
+    } catch {
+      // Fallback to original if compression fails
+      setPhoto(file);
+      const reader = new FileReader();
+      reader.onload = (ev) => setPhotoPreview(ev.target?.result as string);
+      reader.readAsDataURL(file);
+    } finally {
+      setCompressing(false);
+    }
   };
 
   const removePhoto = () => {
@@ -42,23 +63,28 @@ export default function CaptureScreen() {
     if (fileRef.current) fileRef.current.value = "";
   };
 
-  const handleMic = async () => {
+  const handleMic = async (
+    target: "note" | "location",
+    setter: React.Dispatch<React.SetStateAction<string>>
+  ) => {
     if (isRecording) {
-      const blob = await stopRecording();
-      if (blob) {
+      // Manual stop — onComplete callback (set during startRecording) handles transcription
+      stopRecording();
+    } else {
+      setMicTarget(target);
+      await startRecording(async (blob) => {
         setTranscribing(true);
         try {
           const res = await transcription.transcribe(blob);
-          setNote((prev) => (prev ? prev + " " : "") + res.text);
+          setter((prev) => (prev ? prev + " " : "") + res.text);
           showToast("Voice transcribed");
         } catch (err: any) {
           showToast("Transcription failed: " + (err.message || ""));
         } finally {
           setTranscribing(false);
+          setMicTarget(null);
         }
-      }
-    } else {
-      await startRecording();
+      });
     }
   };
 
@@ -100,10 +126,12 @@ export default function CaptureScreen() {
         <div className="mb-5 animate-slide-up">
           <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-2">Photo</label>
           <div
-            onClick={() => fileRef.current?.click()}
+            onClick={() => !compressing && fileRef.current?.click()}
             className="w-full aspect-[4/3] rounded-xl bg-[var(--bg3)] border-2 border-dashed border-[var(--border)] flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-brand hover:bg-brand/5 transition-all overflow-hidden relative"
           >
-            {photoPreview ? (
+            {compressing ? (
+              <span className="text-xs text-[var(--text3)]">Compressing…</span>
+            ) : photoPreview ? (
               <>
                 <img src={photoPreview} alt="Captured" className="w-full h-full object-cover" />
                 <button
@@ -124,7 +152,7 @@ export default function CaptureScreen() {
             ref={fileRef}
             type="file"
             accept="image/*"
-            capture="environment"
+
             className="hidden"
             onChange={handlePhoto}
           />
@@ -142,11 +170,11 @@ export default function CaptureScreen() {
               className="flex-1 px-3.5 py-3 bg-[var(--bg2)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors resize-none leading-relaxed"
             />
             <button
-              onClick={handleMic}
-              disabled={transcribing}
+              onClick={() => handleMic("note", setNote)}
+              disabled={transcribing || (isRecording && micTarget !== "note")}
               className={clsx(
                 "w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 transition-all",
-                isRecording
+                isRecording && micTarget === "note"
                   ? "bg-red-500 text-white animate-recording"
                   : "bg-[var(--surface)] text-[var(--text2)] hover:text-white hover:bg-[var(--bg3)]"
               )}
@@ -154,8 +182,8 @@ export default function CaptureScreen() {
               <Mic className="w-5 h-5" />
             </button>
           </div>
-          {isRecording && (
-            <p className="text-xs text-red-400 font-semibold mt-1.5">● Recording… tap mic to stop</p>
+          {isRecording && micTarget === "note" && (
+            <p className="text-xs text-red-400 font-semibold mt-1.5">● Recording… {secondsLeft}s</p>
           )}
           {transcribing && (
             <p className="text-xs text-[var(--text2)] mt-1.5">Transcribing audio…</p>
@@ -168,12 +196,29 @@ export default function CaptureScreen() {
         {/* Location */}
         <div className="mb-5 animate-slide-up delay-100">
           <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-2">Location</label>
-          <input
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            placeholder="e.g. Unit 3 – Kitchen"
-            className="w-full px-3.5 py-3 bg-[var(--bg2)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
-          />
+          <div className="flex gap-2 items-center">
+            <input
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="e.g. Unit 3 – Kitchen"
+              className="flex-1 px-3.5 py-3 bg-[var(--bg2)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
+            />
+            <button
+              onClick={() => handleMic("location", setLocation)}
+              disabled={transcribing || (isRecording && micTarget !== "location")}
+              className={clsx(
+                "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all",
+                isRecording && micTarget === "location"
+                  ? "bg-red-500 text-white animate-recording"
+                  : "bg-[var(--surface)] text-[var(--text2)] hover:text-white hover:bg-[var(--bg3)]"
+              )}
+            >
+              <Mic className="w-4 h-4" />
+            </button>
+          </div>
+          {isRecording && micTarget === "location" && (
+            <p className="text-xs text-red-400 font-semibold mt-1.5">● Recording… {secondsLeft}s</p>
+          )}
         </div>
 
         {/* Priority */}

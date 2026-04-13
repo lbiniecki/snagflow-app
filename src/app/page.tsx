@@ -7,6 +7,7 @@ import LoginScreen from "@/components/LoginScreen";
 import ProjectsScreen from "@/components/ProjectsScreen";
 import SnagsScreen from "@/components/SnagsScreen";
 import CaptureScreen from "@/components/CaptureScreen";
+import PricingScreen from "@/components/PricingScreen";
 import Toast from "@/components/Toast";
 
 export default function Home() {
@@ -29,6 +30,7 @@ export default function Home() {
       {screen === "projects" && <ProjectsScreen />}
       {screen === "snags" && <SnagsScreen />}
       {screen === "capture" && <CaptureScreen />}
+      {screen === "pricing" && <PricingScreen />}
       {toast && <Toast message={toast} />}
     </>
   );

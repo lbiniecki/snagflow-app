@@ -1,14 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useStore } from "@/lib/store";
-import { snags as snagsApi, reports as reportsApi } from "@/lib/api";
+import { snags as snagsApi, reports as reportsApi, transcription } from "@/lib/api";
 import {
   ChevronLeft, FileText, Plus, Pencil, Trash2, Camera,
-  MapPin, Download, X,
+  MapPin, Download, X, Mic,
 } from "lucide-react";
 import clsx from "clsx";
 import BottomNav from "./BottomNav";
+import { useAudioRecorder } from "@/lib/useAudioRecorder";
+import { compressImage } from "@/lib/compressImage";
 
 const STATUS_COLORS = { open: "text-red-400 bg-red-400/10", closed: "text-green-400 bg-green-400/10" };
 const PRIORITY_COLORS = { high: "text-red-400 bg-red-400/10", medium: "text-yellow-400 bg-yellow-400/10", low: "text-gray-400 bg-gray-400/10" };
@@ -25,6 +27,14 @@ export default function SnagsScreen() {
   const [editLoc, setEditLoc] = useState("");
   const [editPri, setEditPri] = useState<"low" | "medium" | "high">("medium");
   const [downloading, setDownloading] = useState(false);
+  const [weather, setWeather] = useState("");
+  const [visitNo, setVisitNo] = useState("");
+  const [reportTranscribing, setReportTranscribing] = useState(false);
+  const [reportMicTarget, setReportMicTarget] = useState<"weather" | "visitNo" | null>(null);
+  const { isRecording, secondsLeft, startRecording, stopRecording, error: micError } = useAudioRecorder();
+
+  const closePhotoRef = useRef<HTMLInputElement>(null);
+  const [closingSnagId, setClosingSnagId] = useState<string | null>(null);
 
   // Fetch snags
   useEffect(() => {
@@ -68,6 +78,29 @@ export default function SnagsScreen() {
     }
   };
 
+  const startCloseWithPhoto = (id: string) => {
+    setClosingSnagId(id);
+    closePhotoRef.current?.click();
+  };
+
+  const handleClosePhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !closingSnagId) return;
+
+    try {
+      showToast("Compressing photo…");
+      const compressed = await compressImage(file).catch(() => file);
+      await snagsApi.closeWithPhoto(closingSnagId, compressed);
+      setSnags(snags.map((s) => s.id === closingSnagId ? { ...s, status: "closed" as const } : s));
+      showToast("Snag closed with photo");
+    } catch (err: any) {
+      showToast(err.message || "Failed to close snag");
+    } finally {
+      setClosingSnagId(null);
+      if (closePhotoRef.current) closePhotoRef.current.value = "";
+    }
+  };
+
   const saveEdit = async () => {
     if (!editSnag) return;
     try {
@@ -84,12 +117,36 @@ export default function SnagsScreen() {
     if (!currentProject) return;
     setDownloading(true);
     try {
-      await reportsApi.downloadPdf(currentProject.id);
+      await reportsApi.downloadPdf(currentProject.id, { weather, visitNo });
       showToast("Report downloaded");
     } catch (err: any) {
       showToast(err.message);
     } finally {
       setDownloading(false);
+    }
+  };
+
+  const handleReportMic = async (
+    target: "weather" | "visitNo",
+    setter: React.Dispatch<React.SetStateAction<string>>
+  ) => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      setReportMicTarget(target);
+      await startRecording(async (blob) => {
+        setReportTranscribing(true);
+        try {
+          const res = await transcription.transcribe(blob);
+          setter((prev) => (prev ? prev + " " : "") + res.text);
+          showToast("Voice transcribed");
+        } catch (err: any) {
+          showToast("Transcription failed");
+        } finally {
+          setReportTranscribing(false);
+          setReportMicTarget(null);
+        }
+      });
     }
   };
 
@@ -100,8 +157,20 @@ export default function SnagsScreen() {
     setEditPri(s.priority);
   };
 
+  // Hide bottom nav when any modal is open
+  const modalOpen = !!editSnag || showReport;
+
   return (
     <div>
+      {/* Hidden file input for close-with-photo */}
+      <input
+        ref={closePhotoRef}
+        type="file"
+        accept="image/*"
+
+        className="hidden"
+        onChange={handleClosePhoto}
+      />
       {/* Header */}
       <div className="sticky top-0 z-40 bg-[var(--bg)] border-b border-[var(--border)] px-4 py-3 flex items-center gap-3">
         <button onClick={() => setScreen("projects")} className="p-2 rounded-full hover:bg-[var(--bg3)] text-[var(--text2)]">
@@ -171,19 +240,18 @@ export default function SnagsScreen() {
                 <div className="flex-1 min-w-0">
                   <p className="text-[13px] font-medium leading-snug mb-1.5">{s.note}</p>
                   <div className="flex flex-wrap gap-1.5">
-                    <span className={clsx("text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full", STATUS_COLORS[s.status])}>
+                    <span className={clsx("text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase", STATUS_COLORS[s.status])}>
                       {s.status}
                     </span>
-                    <span className={clsx("text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full", PRIORITY_COLORS[s.priority])}>
+                    <span className={clsx("text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase", PRIORITY_COLORS[s.priority])}>
                       {s.priority}
                     </span>
+                    {s.location && (
+                      <span className="text-[10px] text-[var(--text3)] flex items-center gap-0.5">
+                        <MapPin className="w-3 h-3" /> {s.location}
+                      </span>
+                    )}
                   </div>
-                  {s.location && (
-                    <div className="flex items-center gap-1 mt-1.5 text-[11px] text-[var(--text3)]">
-                      <MapPin className="w-2.5 h-2.5" />
-                      {s.location}
-                    </div>
-                  )}
                 </div>
               </div>
 
@@ -198,6 +266,16 @@ export default function SnagsScreen() {
                 >
                   {s.status === "open" ? "Close" : "Reopen"}
                 </button>
+                {s.status === "open" && (
+                  <button
+                    onClick={() => startCloseWithPhoto(s.id)}
+                    disabled={closingSnagId === s.id}
+                    className="p-2 rounded-lg bg-brand/20 text-brand hover:bg-brand/30 transition-colors"
+                    title="Close with photo"
+                  >
+                    <Camera className="w-4 h-4" />
+                  </button>
+                )}
                 <button onClick={() => openEdit(s)} className="p-2 rounded-lg bg-[var(--surface)] text-[var(--text2)] hover:text-white transition-colors">
                   <Pencil className="w-4 h-4" />
                 </button>
@@ -210,13 +288,15 @@ export default function SnagsScreen() {
         )}
       </div>
 
-      {/* FAB */}
-      <button
-        onClick={() => setScreen("capture")}
-        className="fixed bottom-24 right-[max(20px,calc((100%-480px)/2+20px))] w-14 h-14 rounded-full bg-brand text-white flex items-center justify-center shadow-lg shadow-brand/40 hover:scale-110 active:scale-95 transition-transform z-40"
-      >
-        <Plus className="w-6 h-6" />
-      </button>
+      {/* FAB — also hide when modal is open */}
+      {!modalOpen && (
+        <button
+          onClick={() => setScreen("capture")}
+          className="fixed bottom-24 right-[max(20px,calc((100%-480px)/2+20px))] w-14 h-14 rounded-full bg-brand text-white flex items-center justify-center shadow-lg shadow-brand/40 hover:scale-110 active:scale-95 transition-transform z-40"
+        >
+          <Plus className="w-6 h-6" />
+        </button>
+      )}
 
       {/* Report sheet */}
       {showReport && (
@@ -235,6 +315,65 @@ export default function SnagsScreen() {
               </button>
             </div>
 
+            {/* Report fields */}
+            <div className="space-y-3 mb-4">
+              <div>
+                <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">Visit / Report No.</label>
+                <div className="flex gap-2 items-center">
+                  <input
+                    value={visitNo}
+                    onChange={(e) => setVisitNo(e.target.value)}
+                    placeholder="e.g. 1 or 2026/04/13"
+                    className="flex-1 px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
+                  />
+                  <button
+                    onClick={() => handleReportMic("visitNo", setVisitNo)}
+                    disabled={reportTranscribing || (isRecording && reportMicTarget !== "visitNo")}
+                    className={clsx(
+                      "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all",
+                      isRecording && reportMicTarget === "visitNo"
+                        ? "bg-red-500 text-white animate-recording"
+                        : "bg-[var(--surface)] text-[var(--text2)] hover:text-white hover:bg-[var(--bg3)]"
+                    )}
+                  >
+                    <Mic className="w-4 h-4" />
+                  </button>
+                </div>
+                {isRecording && reportMicTarget === "visitNo" && (
+                  <p className="text-xs text-red-400 font-semibold mt-1">● Recording… {secondsLeft}s</p>
+                )}
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">Weather</label>
+                <div className="flex gap-2 items-center">
+                  <input
+                    value={weather}
+                    onChange={(e) => setWeather(e.target.value)}
+                    placeholder="e.g. Sunny, 18°C, light wind"
+                    className="flex-1 px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
+                  />
+                  <button
+                    onClick={() => handleReportMic("weather", setWeather)}
+                    disabled={reportTranscribing || (isRecording && reportMicTarget !== "weather")}
+                    className={clsx(
+                      "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all",
+                      isRecording && reportMicTarget === "weather"
+                        ? "bg-red-500 text-white animate-recording"
+                        : "bg-[var(--surface)] text-[var(--text2)] hover:text-white hover:bg-[var(--bg3)]"
+                    )}
+                  >
+                    <Mic className="w-4 h-4" />
+                  </button>
+                </div>
+                {isRecording && reportMicTarget === "weather" && (
+                  <p className="text-xs text-red-400 font-semibold mt-1">● Recording… {secondsLeft}s</p>
+                )}
+                {reportTranscribing && (
+                  <p className="text-xs text-[var(--text2)] mt-1">Transcribing…</p>
+                )}
+              </div>
+            </div>
+
             {/* Report preview */}
             <div className="bg-white text-gray-900 rounded-xl p-5 text-[11px] leading-relaxed">
               <div className="flex justify-between items-start pb-3 mb-4 border-b-[3px] border-brand">
@@ -245,7 +384,7 @@ export default function SnagsScreen() {
                 </div>
                 <div className="text-right text-[10px] text-gray-400">
                   <p>Date: {new Date().toLocaleDateString("en-GB")}</p>
-                  <p>Ref: SF-{currentProject?.id?.slice(0, 8).toUpperCase()}</p>
+                  <p>Ref: VS-{currentProject?.id?.slice(0, 8).toUpperCase()}</p>
                 </div>
               </div>
 
@@ -355,7 +494,8 @@ export default function SnagsScreen() {
         </div>
       )}
 
-      <BottomNav active="snags" />
+      {/* Hide bottom nav when any modal is open */}
+      {!modalOpen && <BottomNav active="snags" />}
     </div>
   );
 }

@@ -12,7 +12,7 @@ interface AppState {
   logout: () => void;
 
   // Navigation
-  screen: "login" | "projects" | "snags" | "capture";
+  screen: "login" | "projects" | "snags" | "capture" | "pricing";
   setScreen: (screen: AppState["screen"]) => void;
 
   // Projects
@@ -40,7 +40,7 @@ export const useStore = create<AppState>((set) => ({
   token: null,
   setAuth: (user, token) => set({ user, token }),
   logout: () => {
-    localStorage.removeItem("snagflow_token");
+    localStorage.removeItem("voxsite_token");
     set({ user: null, token: null, screen: "login" });
   },
 
