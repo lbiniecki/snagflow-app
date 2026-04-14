@@ -71,6 +71,16 @@ export default function SiteVisitsScreen() {
     }
   };
 
+  const reopenVisit = async (id: string) => {
+    try {
+      await visitsApi.reopen(id);
+      setVisits(visits.map((v) => (v.id === id ? { ...v, status: "open" as const } : v)));
+      showToast("Visit reopened — you can add snags again");
+    } catch (err: any) {
+      showToast(err.message);
+    }
+  };
+
   const deleteVisit = async (id: string) => {
     try {
       await visitsApi.delete(id);
@@ -185,12 +195,20 @@ export default function SiteVisitsScreen() {
                     <Lock className="w-3.5 h-3.5" /> Close Visit
                   </button>
                 ) : (
-                  <button
-                    onClick={() => openVisit(v)}
-                    className="flex-1 py-2 rounded-lg text-xs font-semibold bg-[var(--surface)] text-[var(--text2)] hover:text-white transition-all flex items-center justify-center gap-1.5"
-                  >
-                    <Unlock className="w-3.5 h-3.5" /> View Report
-                  </button>
+                  <>
+                    <button
+                      onClick={() => reopenVisit(v.id)}
+                      className="flex-1 py-2 rounded-lg text-xs font-semibold bg-brand/10 text-brand hover:bg-brand/20 transition-all flex items-center justify-center gap-1.5"
+                    >
+                      <Unlock className="w-3.5 h-3.5" /> Reopen
+                    </button>
+                    <button
+                      onClick={() => openVisit(v)}
+                      className="flex-1 py-2 rounded-lg text-xs font-semibold bg-[var(--surface)] text-[var(--text2)] hover:text-white transition-all flex items-center justify-center gap-1.5"
+                    >
+                      View Report
+                    </button>
+                  </>
                 )}
                 <button
                   onClick={() => deleteVisit(v.id)}

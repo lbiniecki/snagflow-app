@@ -5,7 +5,7 @@ import { useStore } from "@/lib/store";
 import { snags as snagsApi, transcription } from "@/lib/api";
 import { useAudioRecorder } from "@/lib/useAudioRecorder";
 import { compressImage } from "@/lib/compressImage";
-import { ChevronLeft, Camera, Mic, X } from "lucide-react";
+import { ChevronLeft, Camera, Mic, X, Plus } from "lucide-react";
 import clsx from "clsx";
 
 const PRIORITY_STYLES = {
@@ -14,6 +14,13 @@ const PRIORITY_STYLES = {
   high: { active: "border-red-400 text-red-400 bg-red-400/10", inactive: "border-[var(--border)] text-[var(--text3)]" },
 };
 
+const MAX_PHOTOS = 4;
+
+interface PhotoSlot {
+  file: File;
+  preview: string;
+}
+
 export default function CaptureScreen() {
   const { currentProject, currentVisit, setScreen, setSnags, snags, showToast } = useStore();
   const { isRecording, secondsLeft, startRecording, stopRecording, error: micError } = useAudioRecorder();
@@ -21,8 +28,7 @@ export default function CaptureScreen() {
   const [note, setNote] = useState("");
   const [location, setLocation] = useState("");
   const [priority, setPriority] = useState<"low" | "medium" | "high">("medium");
-  const [photo, setPhoto] = useState<File | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photos, setPhotos] = useState<PhotoSlot[]>([]);
   const [saving, setSaving] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
   const [compressing, setCompressing] = useState(false);
@@ -30,37 +36,40 @@ export default function CaptureScreen() {
 
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const handlePhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAddPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || photos.length >= MAX_PHOTOS) return;
 
-    // Compress before storing
     setCompressing(true);
     try {
       const compressed = await compressImage(file);
-      setPhoto(compressed);
-      const reader = new FileReader();
-      reader.onload = (ev) => setPhotoPreview(ev.target?.result as string);
-      reader.readAsDataURL(compressed);
+      const preview = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (ev) => resolve(ev.target?.result as string);
+        reader.readAsDataURL(compressed);
+      });
+
+      setPhotos((prev) => [...prev, { file: compressed, preview }]);
+
       const savedKB = Math.round((file.size - compressed.size) / 1024);
       if (savedKB > 50) {
-        showToast(`Photo compressed (saved ${savedKB > 1024 ? (savedKB / 1024).toFixed(1) + "MB" : savedKB + "KB"})`);
+        showToast(`Compressed (saved ${savedKB > 1024 ? (savedKB / 1024).toFixed(1) + "MB" : savedKB + "KB"})`);
       }
     } catch {
-      // Fallback to original if compression fails
-      setPhoto(file);
-      const reader = new FileReader();
-      reader.onload = (ev) => setPhotoPreview(ev.target?.result as string);
-      reader.readAsDataURL(file);
+      const preview = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (ev) => resolve(ev.target?.result as string);
+        reader.readAsDataURL(file);
+      });
+      setPhotos((prev) => [...prev, { file, preview }]);
     } finally {
       setCompressing(false);
+      if (fileRef.current) fileRef.current.value = "";
     }
   };
 
-  const removePhoto = () => {
-    setPhoto(null);
-    setPhotoPreview(null);
-    if (fileRef.current) fileRef.current.value = "";
+  const removePhoto = (index: number) => {
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleMic = async (
@@ -68,7 +77,6 @@ export default function CaptureScreen() {
     setter: React.Dispatch<React.SetStateAction<string>>
   ) => {
     if (isRecording) {
-      // Manual stop — onComplete callback (set during startRecording) handles transcription
       stopRecording();
     } else {
       setMicTarget(target);
@@ -98,7 +106,10 @@ export default function CaptureScreen() {
         note,
         location: location || undefined,
         priority,
-        photo: photo || undefined,
+        photo: photos[0]?.file,
+        photo2: photos[1]?.file,
+        photo3: photos[2]?.file,
+        photo4: photos[3]?.file,
       });
       setSnags([created, ...snags]);
       showToast("Snag saved!");
@@ -121,41 +132,56 @@ export default function CaptureScreen() {
         <div className="w-9" />
       </div>
 
-      {/* Content */}
       <div className="px-5 py-4 pb-8">
-        {/* Photo */}
+        {/* Photos (up to 4) */}
         <div className="mb-5 animate-slide-up">
-          <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-2">Photo</label>
-          <div
-            onClick={() => !compressing && fileRef.current?.click()}
-            className="w-full aspect-[4/3] rounded-xl bg-[var(--bg3)] border-2 border-dashed border-[var(--border)] flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-brand hover:bg-brand/5 transition-all overflow-hidden relative"
-          >
-            {compressing ? (
-              <span className="text-xs text-[var(--text3)]">Compressing…</span>
-            ) : photoPreview ? (
-              <>
-                <img src={photoPreview} alt="Captured" className="w-full h-full object-cover" />
+          <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-2">
+            Photos ({photos.length}/{MAX_PHOTOS})
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            {photos.map((p, i) => (
+              <div key={i} className="relative aspect-[4/3] rounded-xl overflow-hidden bg-[var(--bg3)]">
+                <img src={p.preview} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" />
                 <button
-                  onClick={(e) => { e.stopPropagation(); removePhoto(); }}
-                  className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center"
+                  onClick={() => removePhoto(i)}
+                  className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-black/60 text-white flex items-center justify-center"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-3.5 h-3.5" />
                 </button>
-              </>
-            ) : (
-              <>
-                <Camera className="w-8 h-8 text-[var(--text3)]" />
-                <span className="text-xs text-[var(--text3)]">Tap to take photo or upload</span>
-              </>
+                <span className="absolute bottom-1.5 left-1.5 text-[10px] font-bold text-white bg-black/50 px-1.5 py-0.5 rounded">
+                  {i + 1}
+                </span>
+              </div>
+            ))}
+
+            {photos.length < MAX_PHOTOS && (
+              <div
+                onClick={() => !compressing && fileRef.current?.click()}
+                className="aspect-[4/3] rounded-xl bg-[var(--bg3)] border-2 border-dashed border-[var(--border)] flex flex-col items-center justify-center gap-1.5 cursor-pointer hover:border-brand hover:bg-brand/5 transition-all"
+              >
+                {compressing ? (
+                  <span className="text-xs text-[var(--text3)]">Compressing…</span>
+                ) : (
+                  <>
+                    {photos.length === 0 ? (
+                      <Camera className="w-7 h-7 text-[var(--text3)]" />
+                    ) : (
+                      <Plus className="w-6 h-6 text-[var(--text3)]" />
+                    )}
+                    <span className="text-[10px] text-[var(--text3)]">
+                      {photos.length === 0 ? "Tap to add photo" : "Add another"}
+                    </span>
+                  </>
+                )}
+              </div>
             )}
           </div>
           <input
             ref={fileRef}
             type="file"
             accept="image/*"
-
             className="hidden"
-            onChange={handlePhoto}
+            onChange={handleAddPhoto}
           />
         </div>
 

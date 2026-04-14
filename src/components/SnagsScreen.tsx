@@ -184,6 +184,7 @@ export default function SnagsScreen() {
 
   // Hide bottom nav when any modal is open
   const modalOpen = !!editSnag || showReport;
+  const visitClosed = currentVisit?.status === "closed";
 
   return (
     <div>
@@ -238,6 +239,13 @@ export default function SnagsScreen() {
           ))}
         </div>
 
+        {/* Visit closed banner */}
+        {visitClosed && (
+          <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-3 mb-4 text-center animate-fade-in">
+            <p className="text-xs font-semibold text-green-400">Visit closed — reopen from the visits screen to add new snags</p>
+          </div>
+        )}
+
         {/* Snag list */}
         {loading ? (
           <div className="text-center py-12 text-[var(--text3)]">Loading…</div>
@@ -251,10 +259,24 @@ export default function SnagsScreen() {
           filtered.map((s, i) => (
             <div
               key={s.id}
-              className="bg-[var(--bg2)] border border-[var(--border)] rounded-xl p-4 mb-2.5 animate-slide-up"
+              className={clsx(
+                "bg-[var(--bg2)] border rounded-xl p-4 mb-2.5 animate-slide-up",
+                s.status === "closed"
+                  ? "border-green-500/20 opacity-70"
+                  : "border-[var(--border)]"
+              )}
               style={{ animationDelay: `${Math.min(i, 4) * 50}ms` }}
             >
               <div className="flex gap-3">
+                {/* Snag number badge */}
+                <div className={clsx(
+                  "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold",
+                  s.status === "closed"
+                    ? "bg-green-500/10 text-green-400"
+                    : "bg-brand/10 text-brand"
+                )}>
+                  {(s as any).snag_no || i + 1}
+                </div>
                 {/* Photo */}
                 {s.photo_url ? (
                   <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 group">
@@ -333,8 +355,8 @@ export default function SnagsScreen() {
         )}
       </div>
 
-      {/* FAB — also hide when modal is open */}
-      {!modalOpen && (
+      {/* FAB — hide when modal is open or visit is closed */}
+      {!modalOpen && !visitClosed && (
         <button
           onClick={() => setScreen("capture")}
           className="fixed bottom-24 right-[max(20px,calc((100%-480px)/2+20px))] w-14 h-14 rounded-full bg-brand text-white flex items-center justify-center shadow-lg shadow-brand/40 hover:scale-110 active:scale-95 transition-transform z-40"

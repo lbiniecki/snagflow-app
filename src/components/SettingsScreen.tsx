@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useStore } from "@/lib/store";
-import { companies } from "@/lib/api";
+import { companies, profiles } from "@/lib/api";
 import type { Company, CompanyMember } from "@/lib/api";
 import {
-  ChevronLeft, Upload, Trash2, UserPlus, X, Building2, Users, Image,
+  ChevronLeft, Upload, Trash2, UserPlus, X, Building2, Users, Image, User,
 } from "lucide-react";
 import BottomNav from "./BottomNav";
 
@@ -18,13 +18,24 @@ export default function SettingsScreen() {
   const [newMemberEmail, setNewMemberEmail] = useState("");
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [profileSaved, setProfileSaved] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
-  // Fetch company data
+  // Fetch company + profile data
   useEffect(() => {
     async function load() {
       setLoading(true);
       try {
+        // Load profile
+        try {
+          const p = await profiles.get();
+          setFirstName(p.first_name || "");
+          setLastName(p.last_name || "");
+        } catch {}
+
+        // Load company
         const c = await companies.getMyCompany();
         setCompany(c);
         if (c) {
@@ -33,7 +44,7 @@ export default function SettingsScreen() {
           setMembers(m);
         }
       } catch (err) {
-        console.error("Failed to load company:", err);
+        console.error("Failed to load settings:", err);
       } finally {
         setLoading(false);
       }
@@ -52,6 +63,17 @@ export default function SettingsScreen() {
       showToast(err.message);
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      await profiles.update({ first_name: firstName.trim(), last_name: lastName.trim() });
+      setProfileSaved(true);
+      showToast("Profile saved — this name will appear on reports");
+      setTimeout(() => setProfileSaved(false), 2000);
+    } catch (err: any) {
+      showToast(err.message);
     }
   };
 
@@ -141,6 +163,25 @@ export default function SettingsScreen() {
         ) : !company ? (
           /* ── No company yet — create one ── */
           <div className="animate-fade-in">
+            {/* Profile name (always shown) */}
+            <section className="mb-6">
+              <h3 className="text-xs font-semibold text-[var(--text2)] uppercase tracking-wider mb-3 flex items-center gap-2">
+                <User className="w-4 h-4" /> Your Name
+              </h3>
+              <div className="bg-[var(--bg2)] border border-[var(--border)] rounded-xl p-4">
+                <p className="text-[11px] text-[var(--text3)] mb-3">This name appears as the inspector signature on PDF reports.</p>
+                <div className="flex gap-2 mb-2">
+                  <input value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="First name"
+                    className="flex-1 px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors" />
+                  <input value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Last name"
+                    className="flex-1 px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors" />
+                </div>
+                <button onClick={handleSaveProfile} className="w-full py-2.5 bg-brand text-white text-xs font-semibold rounded-lg transition-all">
+                  {profileSaved ? "Saved!" : "Save Name"}
+                </button>
+              </div>
+            </section>
+
             <div className="text-center py-8">
               <Building2 className="w-12 h-12 mx-auto mb-4 text-[var(--text3)] opacity-40" />
               <h3 className="text-lg font-bold mb-1">Set Up Your Company</h3>
@@ -170,6 +211,25 @@ export default function SettingsScreen() {
         ) : (
           /* ── Company exists — show settings ── */
           <div className="space-y-6 animate-fade-in">
+            {/* Your Name */}
+            <section>
+              <h3 className="text-xs font-semibold text-[var(--text2)] uppercase tracking-wider mb-3 flex items-center gap-2">
+                <User className="w-4 h-4" /> Your Name
+              </h3>
+              <div className="bg-[var(--bg2)] border border-[var(--border)] rounded-xl p-4">
+                <p className="text-[11px] text-[var(--text3)] mb-3">This name appears as the inspector signature on PDF reports.</p>
+                <div className="flex gap-2 mb-2">
+                  <input value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="First name"
+                    className="flex-1 px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors" />
+                  <input value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Last name"
+                    className="flex-1 px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors" />
+                </div>
+                <button onClick={handleSaveProfile} className="w-full py-2.5 bg-brand text-white text-xs font-semibold rounded-lg transition-all">
+                  {profileSaved ? "Saved!" : "Save Name"}
+                </button>
+              </div>
+            </section>
+
             {/* Company Info */}
             <section>
               <h3 className="text-xs font-semibold text-[var(--text2)] uppercase tracking-wider mb-3 flex items-center gap-2">

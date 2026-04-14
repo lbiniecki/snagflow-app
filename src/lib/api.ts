@@ -77,6 +77,12 @@ export interface TranscribeResponse {
   duration?: number;
 }
 
+export interface Profile {
+  id: string;
+  first_name: string;
+  last_name: string;
+}
+
 // ─── Token Management ─────────────────────────────────────────
 let accessToken: string | null = null;
 
@@ -226,6 +232,12 @@ export const siteVisits = {
     });
   },
 
+  reopen(id: string) {
+    return apiFetch<SiteVisit>(`/site-visits/${id}/reopen`, {
+      method: "POST",
+    });
+  },
+
   delete(id: string) {
     return apiFetch<void>(`/site-visits/${id}`, { method: "DELETE" });
   },
@@ -246,6 +258,9 @@ export const snags = {
     location?: string;
     priority?: string;
     photo?: File;
+    photo2?: File;
+    photo3?: File;
+    photo4?: File;
   }) {
     const form = new FormData();
     form.append("project_id", data.project_id);
@@ -254,6 +269,9 @@ export const snags = {
     if (data.location) form.append("location", data.location);
     form.append("priority", data.priority || "medium");
     if (data.photo) form.append("photo", data.photo);
+    if (data.photo2) form.append("photo2", data.photo2);
+    if (data.photo3) form.append("photo3", data.photo3);
+    if (data.photo4) form.append("photo4", data.photo4);
 
     return apiFetch<Snag>("/snags/", {
       method: "POST",
@@ -388,6 +406,20 @@ export const companies = {
   removeMember(memberId: string) {
     return apiFetch<{ message: string }>(`/companies/members/${memberId}`, {
       method: "DELETE",
+    });
+  },
+};
+
+// ─── Profiles ─────────────────────────────────────────────────
+export const profiles = {
+  get() {
+    return apiFetch<Profile>("/profiles/me");
+  },
+
+  update(data: { first_name?: string; last_name?: string }) {
+    return apiFetch<Profile>("/profiles/me", {
+      method: "PUT",
+      body: JSON.stringify(data),
     });
   },
 };
