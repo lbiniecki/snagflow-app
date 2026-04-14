@@ -28,9 +28,28 @@ export default function LoginScreen() {
         await authApi.signup(email, password);
         setMessage("Account created! Check your email to confirm.");
       } else {
-        const res = await authApi.login(email, password);
+       const res = await authApi.login(email, password);
         setToken(res.access_token);
         setAuth({ id: res.user_id, email: res.email }, res.access_token);
+
+        // Auto-join company if there's a pending invite
+        try {
+          const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+          const joinRes = await fetch(`${API}/companies/join`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${res.access_token}`,
+              "Content-Type": "application/json",
+            },
+          });
+          if (joinRes.ok) {
+            const joinData = await joinRes.json();
+            if (joinData?.status === "joined") {
+              setMessage(joinData.message || "You've joined a team!");
+            }
+          }
+        } catch {}
+
         setScreen("projects");
       }
     } catch (err: any) {
