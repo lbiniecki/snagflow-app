@@ -6,24 +6,48 @@ import { companies, profiles } from "@/lib/api";
 import type { Company, CompanyMember } from "@/lib/api";
 import {
   ChevronLeft, Upload, Trash2, UserPlus, X, Building2, Users, Image, User,
+  Clock, Mail,
 } from "lucide-react";
 import BottomNav from "./BottomNav";
+
+// Pending invite type (from the new /pending-invites endpoint)
+interface PendingInvite {
+  id: string;
+  email: string;
+  role: string;
+  status: string;
+  created_at: string;
+  expires_at: string;
+}
 
 export default function SettingsScreen() {
   const { setScreen, showToast, user } = useStore();
 
   const [company, setCompany] = useState<Company | null>(null);
   const [members, setMembers] = useState<CompanyMember[]>([]);
+  const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
   const [companyName, setCompanyName] = useState("");
   const [newMemberEmail, setNewMemberEmail] = useState("");
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [adding, setAdding] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [profileSaved, setProfileSaved] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
-  // Fetch company + profile data
+  const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+
+  // Helper to get auth headers
+  const authHeaders = () => {
+    const token = localStorage.getItem("voxsite_token");
+    return {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    };
+  };
+
+  // Fetch company + profile + members + pending invites
   useEffect(() => {
     async function load() {
       setLoading(true);
@@ -40,8 +64,30 @@ export default function SettingsScreen() {
         setCompany(c);
         if (c) {
           setCompanyName(c.name);
-          const m = await companies.listMembers();
-          setMembers(m);
+
+          // Fetch members (now returns email + full_name from profiles join)
+          try {
+            const token = localStorage.getItem("voxsite_token");
+            const mRes = await fetch(`${API}/companies/members`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (mRes.ok) {
+              const mData = await mRes.json();
+              setMembers(mData);
+            }
+          } catch {}
+
+          // Fetch pending invites
+          try {
+            const token = localStorage.getItem("voxsite_token");
+            const iRes = await fetch(`${API}/companies/pending-invites`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (iRes.ok) {
+              const iData = await iRes.json();
+              setPendingInvites(iData);
+            }
+          } catch {}
         }
       } catch (err) {
         console.error("Failed to load settings:", err);
@@ -50,7 +96,7 @@ export default function SettingsScreen() {
       }
     }
     load();
-  }, []);
+  }, [API]);
 
   const handleCreateCompany = async () => {
     if (!companyName.trim()) return;
@@ -94,7 +140,6 @@ export default function SettingsScreen() {
     try {
       showToast("Uploading logo…");
       await companies.uploadLogo(file);
-      // Refresh company data
       const c = await companies.getMyCompany();
       setCompany(c);
       showToast("Logo uploaded");
@@ -114,15 +159,53 @@ export default function SettingsScreen() {
     }
   };
 
+  // ── FIXED: handles both "added" (existing user) and "invited" (new user) ──
   const handleAddMember = async () => {
     if (!newMemberEmail.trim()) return;
+    setAdding(true);
     try {
-      const member = await companies.addMember(newMemberEmail.trim());
-      setMembers([...members, member]);
+      const token = localStorage.getItem("voxsite_token");
+      const res = await fetch(`${API}/companies/members`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: newMemberEmail.trim(), role: "member" }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        showToast(data.detail || "Failed to add member");
+        return;
+      }
+
+      if (data.status === "added") {
+        // User existed — added directly, refresh member list
+        const mRes = await fetch(`${API}/companies/members`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (mRes.ok) setMembers(await mRes.json());
+        showToast(data.message || "Member added");
+      } else if (data.status === "invited") {
+        // User doesn't exist yet — invite created, refresh invites
+        const iRes = await fetch(`${API}/companies/pending-invites`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (iRes.ok) setPendingInvites(await iRes.json());
+        showToast(data.message || "Invite sent");
+      }
+
       setNewMemberEmail("");
-      showToast("Member added");
+
+      // Refresh company to update member_count
+      const c = await companies.getMyCompany();
+      setCompany(c);
     } catch (err: any) {
-      showToast(err.message);
+      showToast(err.message || "Failed to add member");
+    } finally {
+      setAdding(false);
     }
   };
 
@@ -130,11 +213,51 @@ export default function SettingsScreen() {
     try {
       await companies.removeMember(memberId);
       setMembers(members.filter((m) => m.id !== memberId));
+      const c = await companies.getMyCompany();
+      setCompany(c);
       showToast("Member removed");
     } catch (err: any) {
       showToast(err.message);
     }
   };
+
+  // ── NEW: revoke a pending invite ──
+  const handleRevokeInvite = async (inviteId: string) => {
+    try {
+      const token = localStorage.getItem("voxsite_token");
+      const res = await fetch(`${API}/companies/invites/${inviteId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        setPendingInvites(pendingInvites.filter((i) => i.id !== inviteId));
+        const c = await companies.getMyCompany();
+        setCompany(c);
+        showToast("Invite revoked");
+      } else {
+        const data = await res.json();
+        showToast(data.detail || "Failed to revoke");
+      }
+    } catch (err: any) {
+      showToast(err.message);
+    }
+  };
+
+  // Helper: get display name for a member
+  const getMemberDisplay = (m: any) => {
+    if (m.full_name && m.full_name.trim()) return m.full_name;
+    if (m.email && m.email.trim()) return m.email;
+    return m.user_id?.slice(0, 8) + "…";
+  };
+
+  const getMemberInitial = (m: any) => {
+    if (m.full_name && m.full_name.trim()) return m.full_name[0].toUpperCase();
+    if (m.email && m.email.trim()) return m.email[0].toUpperCase();
+    return "?";
+  };
+
+  // Count total seats used (members + pending invites)
+  const totalSeats = members.length + pendingInvites.length;
 
   return (
     <div>
@@ -256,7 +379,7 @@ export default function SettingsScreen() {
                   <span className="text-xs text-[var(--text3)]">Plan:</span>
                   <span className="text-xs font-semibold text-brand uppercase">{company.plan}</span>
                   <span className="text-xs text-[var(--text3)]">•</span>
-                  <span className="text-xs text-[var(--text3)]">{company.member_count || 1}/{company.max_users} users</span>
+                  <span className="text-xs text-[var(--text3)]">{totalSeats}/{company.max_users} users</span>
                 </div>
               </div>
             </section>
@@ -309,56 +432,90 @@ export default function SettingsScreen() {
             {/* Team Members */}
             <section>
               <h3 className="text-xs font-semibold text-[var(--text2)] uppercase tracking-wider mb-3 flex items-center gap-2">
-                <Users className="w-4 h-4" /> Team Members ({company.member_count || 1}/{company.max_users})
+                <Users className="w-4 h-4" /> Team Members ({totalSeats}/{company.max_users})
               </h3>
               <div className="bg-[var(--bg2)] border border-[var(--border)] rounded-xl p-4">
-                {/* Current user (owner) */}
-                <div className="flex items-center gap-3 mb-3 pb-3 border-b border-[var(--border)]">
-                  <div className="w-8 h-8 rounded-full bg-brand/20 flex items-center justify-center text-brand text-xs font-bold">
-                    {user?.email?.[0]?.toUpperCase() || "?"}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{user?.email}</p>
-                    <p className="text-[10px] text-brand font-semibold uppercase">Owner</p>
-                  </div>
-                </div>
+                {/* ── Active members ── */}
+                {members.map((m) => {
+                  const isOwner = m.role === "owner";
+                  const isMe = m.user_id === user?.id;
+                  const display = getMemberDisplay(m);
+                  const initial = getMemberInitial(m);
 
-                {/* Other members */}
-                {members
-                  .filter((m) => m.user_id !== user?.id)
-                  .map((m) => (
-                    <div key={m.id} className="flex items-center gap-3 mb-2">
-                      <div className="w-8 h-8 rounded-full bg-[var(--bg3)] flex items-center justify-center text-[var(--text3)] text-xs font-bold">
-                        ?
+                  return (
+                    <div key={m.id} className="flex items-center gap-3 mb-3 pb-3 border-b border-[var(--border)] last:mb-0 last:pb-0 last:border-0">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
+                        isOwner ? "bg-brand/20 text-brand" : "bg-[var(--bg3)] text-[var(--text2)]"
+                      }`}>
+                        {initial}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm truncate">{m.user_id.slice(0, 8)}…</p>
-                        <p className="text-[10px] text-[var(--text3)] uppercase">{m.role}</p>
+                        <p className="text-sm font-medium truncate">{display}</p>
+                        {m.email && m.full_name && (
+                          <p className="text-[10px] text-[var(--text3)] truncate">{m.email}</p>
+                        )}
+                        <p className={`text-[10px] font-semibold uppercase ${
+                          isOwner ? "text-brand" : "text-[var(--text3)]"
+                        }`}>{m.role}</p>
                       </div>
-                      <button
-                        onClick={() => handleRemoveMember(m.id)}
-                        className="p-1.5 rounded-lg bg-red-400/10 text-red-400 hover:bg-red-400/20 transition-colors"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
+                      {/* Only owner can remove, and can't remove self */}
+                      {company.is_owner && !isMe && (
+                        <button
+                          onClick={() => handleRemoveMember(m.id)}
+                          className="p-1.5 rounded-lg bg-red-400/10 text-red-400 hover:bg-red-400/20 transition-colors"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
-                  ))}
+                  );
+                })}
 
-                {/* Add member */}
+                {/* ── Pending invites ── */}
+                {pendingInvites.length > 0 && (
+                  <div className={members.length > 0 ? "mt-2 pt-3 border-t border-[var(--border)]" : ""}>
+                    {pendingInvites.map((inv) => (
+                      <div key={inv.id} className="flex items-center gap-3 mb-3 last:mb-0">
+                        <div className="w-8 h-8 rounded-full bg-yellow-400/10 flex items-center justify-center">
+                          <Mail className="w-3.5 h-3.5 text-yellow-400" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm truncate">{inv.email}</p>
+                          <div className="flex items-center gap-1.5">
+                            <Clock className="w-3 h-3 text-yellow-400" />
+                            <span className="text-[10px] text-yellow-400 font-semibold uppercase">Pending invite</span>
+                          </div>
+                        </div>
+                        {company.is_owner && (
+                          <button
+                            onClick={() => handleRevokeInvite(inv.id)}
+                            className="p-1.5 rounded-lg bg-red-400/10 text-red-400 hover:bg-red-400/20 transition-colors"
+                            title="Revoke invite"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* ── Add member input ── */}
                 {company.is_owner && (
                   <div className="flex gap-2 mt-3 pt-3 border-t border-[var(--border)]">
                     <input
                       value={newMemberEmail}
                       onChange={(e) => setNewMemberEmail(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleAddMember()}
                       placeholder="team@company.com"
                       className="flex-1 px-3 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
                     />
                     <button
                       onClick={handleAddMember}
-                      disabled={!newMemberEmail.trim()}
+                      disabled={!newMemberEmail.trim() || adding}
                       className="px-3 py-2.5 bg-brand text-white text-xs font-semibold rounded-lg disabled:opacity-30 transition-all flex items-center gap-1"
                     >
-                      <UserPlus className="w-3.5 h-3.5" /> Add
+                      <UserPlus className="w-3.5 h-3.5" /> {adding ? "…" : "Add"}
                     </button>
                   </div>
                 )}

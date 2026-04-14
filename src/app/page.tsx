@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect } from "react";
 import { useStore } from "@/lib/store";
 import { getToken, setToken } from "@/lib/api";
@@ -13,27 +12,55 @@ import SettingsScreen from "@/components/SettingsScreen";
 import OfflineBanner from "@/components/OfflineBanner";
 import Toast from "@/components/Toast";
 
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+
 export default function Home() {
-  const { screen, setScreen, setAuth, toast } = useStore();
+  const { screen, setScreen, setAuth, showToast, toast } = useStore();
 
   // Restore session on mount
   useEffect(() => {
     const token = getToken();
-    if (token) {
-      fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"}/auth/me`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-        .then((r) => r.ok ? r.json() : Promise.reject())
-        .then((user) => {
-          setAuth({ id: user.id, email: user.email }, token);
-          setScreen("projects");
-        })
-        .catch(() => {
-          setToken(null);
-          setScreen("login");
+    if (!token) return;
+
+    const init = async () => {
+      try {
+        // 1. Verify token & get user info
+        const meRes = await fetch(`${API}/auth/me`, {
+          headers: { Authorization: `Bearer ${token}` },
         });
-    }
-  }, [setAuth, setScreen]);
+        if (!meRes.ok) throw new Error("Token expired");
+        const user = await meRes.json();
+
+        setAuth({ id: user.id, email: user.email }, token);
+
+        // 2. Auto-join company if there's a pending invite for this email
+        try {
+          const joinRes = await fetch(`${API}/companies/join`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          });
+          if (joinRes.ok) {
+            const joinData = await joinRes.json();
+            if (joinData?.status === "joined") {
+              showToast(joinData.message || "You've joined a team!");
+            }
+          }
+        } catch {
+          // Non-critical — continue to projects even if join check fails
+        }
+
+        setScreen("projects");
+      } catch {
+        setToken(null);
+        setScreen("login");
+      }
+    };
+
+    init();
+  }, [setAuth, setScreen, showToast]);
 
   return (
     <>
