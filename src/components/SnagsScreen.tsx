@@ -3,9 +3,11 @@
 import { useState, useEffect, useRef } from "react";
 import { useStore } from "@/lib/store";
 import { snags as snagsApi, reports as reportsApi, transcription, siteVisits as visitsApi } from "@/lib/api";
+import { useOnlineStatus } from "@/lib/useOnlineStatus";
+import { getPendingForVisit, getPendingSnags, type PendingSnag } from "@/lib/offlineStore";
 import {
   ChevronLeft, FileText, Plus, Pencil, Trash2, Camera,
-  MapPin, Download, X, Mic,
+  MapPin, Download, X, Mic, WifiOff, CloudUpload,
 } from "lucide-react";
 import clsx from "clsx";
 import BottomNav from "./BottomNav";
@@ -36,6 +38,8 @@ export default function SnagsScreen() {
 
   const closePhotoRef = useRef<HTMLInputElement>(null);
   const [closingSnagId, setClosingSnagId] = useState<string | null>(null);
+  const [pendingSnags, setPendingSnags] = useState<PendingSnag[]>([]);
+  const isOnline = useOnlineStatus();
 
   // Fetch snags (scoped to current visit if available)
   useEffect(() => {
@@ -43,13 +47,22 @@ export default function SnagsScreen() {
     async function load() {
       setLoading(true);
       try {
-        const data = await snagsApi.list(currentProject!.id, currentVisit?.id);
-        setSnags(data);
+        if (navigator.onLine) {
+          const data = await snagsApi.list(currentProject!.id, currentVisit?.id);
+          setSnags(data);
+        }
       } catch (err) {
-        console.error("Failed to load snags:", err);
+        console.error("Failed to load snags (offline?):", err);
       } finally {
         setLoading(false);
       }
+      // Always load pending offline snags
+      try {
+        const pending = currentVisit
+          ? await getPendingForVisit(currentVisit.id)
+          : await getPendingSnags();
+        setPendingSnags(pending.filter((p) => p.project_id === currentProject!.id));
+      } catch {}
     }
     load();
   }, [currentProject, currentVisit, setSnags, setLoading]);
@@ -243,6 +256,28 @@ export default function SnagsScreen() {
         {visitClosed && (
           <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-3 mb-4 text-center animate-fade-in">
             <p className="text-xs font-semibold text-green-400">Visit closed — reopen from the visits screen to add new snags</p>
+          </div>
+        )}
+
+        {/* Pending offline snags */}
+        {pendingSnags.length > 0 && (
+          <div className="mb-4">
+            <p className="text-[11px] font-semibold text-yellow-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <CloudUpload className="w-3.5 h-3.5" /> {pendingSnags.length} pending sync
+            </p>
+            {pendingSnags.map((p) => (
+              <div key={p.id} className="bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-3 mb-2 opacity-70">
+                <div className="flex items-center gap-2">
+                  <WifiOff className="w-4 h-4 text-yellow-400 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-white truncate">{p.note}</p>
+                    <p className="text-[10px] text-[var(--text3)]">
+                      {p.location || "No location"} • {p.photos.length} photo{p.photos.length !== 1 ? "s" : ""} • {p.status}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
