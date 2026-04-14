@@ -5,7 +5,7 @@ import { useStore } from "@/lib/store";
 import { siteVisits as visitsApi } from "@/lib/api";
 import {
   ChevronLeft, Plus, X, ClipboardList, Lock, Unlock,
-  Calendar, CloudSun, Trash2,
+  Calendar, CloudSun, Trash2, Pencil,
 } from "lucide-react";
 import clsx from "clsx";
 import BottomNav from "./BottomNav";
@@ -16,16 +16,17 @@ export default function SiteVisitsScreen() {
     setCurrentVisit, showToast, loading, setLoading,
   } = useStore();
 
+  const DEFAULT_CLOSING = "If requested, notice must be given to allow for a site visit to review prior to closing up or concealing the item of works.\n\nThe contractor is to confirm that the above actions have been carried out and provide photographic record of the associated works. The contractor is to sign the items as closed and e-mail to originator.";
+
   const [showModal, setShowModal] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [weather, setWeather] = useState("");
   const [attendees, setAttendees] = useState("");
   const [accessNotes, setAccessNotes] = useState("");
   const [checker, setChecker] = useState("");
   const [reviewer, setReviewer] = useState("");
   const [approver, setApprover] = useState("");
-  const [closingNotes, setClosingNotes] = useState(
-    "If requested, notice must be given to allow for a site visit to review prior to closing up or concealing the item of works.\n\nThe contractor is to confirm that the above actions have been carried out and provide photographic record of the associated works. The contractor is to sign the items as closed and e-mail to originator."
-  );
+  const [closingNotes, setClosingNotes] = useState(DEFAULT_CLOSING);
 
   // Fetch visits
   useEffect(() => {
@@ -52,27 +53,71 @@ export default function SiteVisitsScreen() {
     load();
   }, [currentProject, setVisits, setLoading]);
 
-  const handleCreate = async () => {
+  const resetForm = () => {
+    setWeather("");
+    setAttendees("");
+    setAccessNotes("");
+    setEditingId(null);
+    // Keep checker/reviewer/approver/closingNotes for next visit
+  };
+
+  const openEdit = (v: typeof visits[0]) => {
+    setEditingId(v.id);
+    setWeather(v.weather || "");
+    setAttendees(v.attendees || "");
+    setAccessNotes(v.access_notes || "");
+    setChecker((v as any).checker || "");
+    setReviewer((v as any).reviewer || "");
+    setApprover((v as any).approver || "");
+    setClosingNotes((v as any).closing_notes || DEFAULT_CLOSING);
+    setShowModal(true);
+  };
+
+  const openNew = () => {
+    setEditingId(null);
+    setWeather("");
+    setAttendees("");
+    setAccessNotes("");
+    setShowModal(true);
+  };
+
+  const handleSave = async () => {
     if (!currentProject) return;
     try {
-      const created = await visitsApi.create({
-        project_id: currentProject.id,
-        weather,
-        attendees,
-        access_notes: accessNotes,
-        checker,
-        reviewer,
-        approver,
-        closing_notes: closingNotes,
-      });
-      setVisits([created, ...visits]);
-      setShowModal(false);
-      setWeather("");
-      setAttendees("");
-      setAccessNotes("");
-      showToast(`Visit #${created.visit_no} created`);
-      setCurrentVisit(created);
-      setScreen("snags");
+      if (editingId) {
+        // Update existing visit
+        const updated = await visitsApi.update(editingId, {
+          weather,
+          attendees,
+          access_notes: accessNotes,
+          checker,
+          reviewer,
+          approver,
+          closing_notes: closingNotes,
+        } as any);
+        setVisits(visits.map((v) => (v.id === editingId ? { ...v, ...updated } : v)));
+        setShowModal(false);
+        resetForm();
+        showToast("Visit updated");
+      } else {
+        // Create new visit
+        const created = await visitsApi.create({
+          project_id: currentProject.id,
+          weather,
+          attendees,
+          access_notes: accessNotes,
+          checker,
+          reviewer,
+          approver,
+          closing_notes: closingNotes,
+        });
+        setVisits([created, ...visits]);
+        setShowModal(false);
+        resetForm();
+        showToast(`Visit #${created.visit_no} created`);
+        setCurrentVisit(created);
+        setScreen("snags");
+      }
     } catch (err: any) {
       showToast(err.message);
     }
@@ -233,6 +278,13 @@ export default function SiteVisitsScreen() {
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
+                <button
+                  onClick={() => openEdit(v)}
+                  className="p-2 rounded-lg bg-[var(--surface)] text-[var(--text2)] hover:text-white transition-colors"
+                  title="Edit visit settings"
+                >
+                  <Pencil className="w-4 h-4" />
+                </button>
               </div>
             </div>
           ))
@@ -242,7 +294,7 @@ export default function SiteVisitsScreen() {
       {/* FAB */}
       {!modalOpen && (
         <button
-          onClick={() => setShowModal(true)}
+          onClick={() => openNew()}
           className="fixed bottom-24 right-[max(20px,calc((100%-480px)/2+20px))] w-14 h-14 rounded-full bg-brand text-white flex items-center justify-center shadow-lg shadow-brand/40 hover:scale-110 active:scale-95 transition-transform z-40"
         >
           <Plus className="w-6 h-6" />
@@ -251,12 +303,12 @@ export default function SiteVisitsScreen() {
 
       {/* Create Visit modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-end justify-center animate-fade-in" onClick={() => setShowModal(false)}>
-          <div className="w-full max-w-[480px] bg-[var(--bg2)] rounded-t-2xl p-5 animate-slide-up" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-end justify-center animate-fade-in" onClick={() => { setShowModal(false); resetForm(); }}>
+          <div className="w-full max-w-[480px] max-h-[90vh] bg-[var(--bg2)] rounded-t-2xl p-5 overflow-y-auto animate-slide-up" onClick={(e) => e.stopPropagation()}>
             <div className="w-10 h-1 bg-[var(--border)] rounded-full mx-auto mb-4" />
             <div className="flex justify-between items-center mb-5">
-              <h3 className="text-lg font-bold">New Site Visit</h3>
-              <button onClick={() => setShowModal(false)} className="text-[var(--text3)]"><X className="w-5 h-5" /></button>
+              <h3 className="text-lg font-bold">{editingId ? "Edit Visit" : "New Site Visit"}</h3>
+              <button onClick={() => { setShowModal(false); resetForm(); }} className="text-[var(--text3)]"><X className="w-5 h-5" /></button>
             </div>
 
             <div className="space-y-3 mb-5">
@@ -317,10 +369,10 @@ export default function SiteVisitsScreen() {
               </div>
             </div>
 
-            <button onClick={handleCreate}
+            <button onClick={handleSave}
               className="w-full h-12 bg-brand hover:bg-brand-light text-white font-semibold rounded-lg transition-all"
             >
-              Start Inspection
+              {editingId ? "Save Changes" : "Start Inspection"}
             </button>
           </div>
         </div>
