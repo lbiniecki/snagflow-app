@@ -23,6 +23,9 @@ export default function SiteVisitsScreen() {
   const [checker, setChecker] = useState("");
   const [reviewer, setReviewer] = useState("");
   const [approver, setApprover] = useState("");
+  const [closingNotes, setClosingNotes] = useState(
+    "If requested, notice must be given to allow for a site visit to review prior to closing up or concealing the item of works.\n\nThe contractor is to confirm that the above actions have been carried out and provide photographic record of the associated works. The contractor is to sign the items as closed and e-mail to originator."
+  );
 
   // Fetch visits
   useEffect(() => {
@@ -38,6 +41,7 @@ export default function SiteVisitsScreen() {
           setChecker((last as any).checker || "");
           setReviewer((last as any).reviewer || "");
           setApprover((last as any).approver || "");
+          if ((last as any).closing_notes) setClosingNotes((last as any).closing_notes);
         }
       } catch (err) {
         console.error("Failed to load visits:", err);
@@ -59,6 +63,7 @@ export default function SiteVisitsScreen() {
         checker,
         reviewer,
         approver,
+        closing_notes: closingNotes,
       });
       setVisits([created, ...visits]);
       setShowModal(false);
@@ -297,6 +302,18 @@ export default function SiteVisitsScreen() {
                     />
                   </div>
                 </div>
+              </div>
+
+              {/* Report closing text */}
+              <div className="pt-2 border-t border-[var(--border)]">
+                <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">Report Footer Text</label>
+                <textarea
+                  value={closingNotes}
+                  onChange={(e) => setClosingNotes(e.target.value)}
+                  rows={4}
+                  className="w-full px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-xs text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors resize-none leading-relaxed"
+                />
+                <p className="text-[9px] text-[var(--text3)] mt-1">This text appears on the last page of the PDF report</p>
               </div>
             </div>
 

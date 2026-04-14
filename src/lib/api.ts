@@ -30,6 +30,7 @@ export interface SiteVisit {
   checker: string;
   reviewer: string;
   approver: string;
+  closing_notes: string;
   created_at: string;
   updated_at: string;
 }
@@ -218,6 +219,7 @@ export const siteVisits = {
     checker?: string;
     reviewer?: string;
     approver?: string;
+    closing_notes?: string;
   }) {
     return apiFetch<SiteVisit>("/site-visits/", {
       method: "POST",
