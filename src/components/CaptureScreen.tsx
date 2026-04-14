@@ -103,32 +103,39 @@ export default function CaptureScreen() {
     if (!note.trim() || !currentProject) return;
     setSaving(true);
 
-    if (isOnline) {
-      // ── Online: upload directly ──
-      try {
-        const created = await snagsApi.create({
-          project_id: currentProject.id,
-          visit_id: currentVisit?.id,
-          note,
-          location: location || undefined,
-          priority,
-          photo: photos[0]?.file,
-          photo2: photos[1]?.file,
-          photo3: photos[2]?.file,
-          photo4: photos[3]?.file,
-        });
-        setSnags([created, ...snags]);
-        showToast("Snag saved!");
-        setScreen("snags");
-      } catch (err: any) {
-        // Upload failed — try saving offline
-        await saveOffline();
-      } finally {
-        setSaving(false);
-      }
-    } else {
-      // ── Offline: save locally ──
+    // Check connectivity directly (hook state can lag)
+    if (!navigator.onLine) {
       await saveOffline();
+      setSaving(false);
+      return;
+    }
+
+    // Online: try upload with 8s timeout
+    try {
+      const createPromise = snagsApi.create({
+        project_id: currentProject.id,
+        visit_id: currentVisit?.id,
+        note,
+        location: location || undefined,
+        priority,
+        photo: photos[0]?.file,
+        photo2: photos[1]?.file,
+        photo3: photos[2]?.file,
+        photo4: photos[3]?.file,
+      });
+
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("timeout")), 8000)
+      );
+
+      const created = await Promise.race([createPromise, timeoutPromise]) as any;
+      setSnags([created, ...snags]);
+      showToast("Snag saved!");
+      setScreen("snags");
+    } catch (err: any) {
+      // Upload failed or timed out — save offline
+      await saveOffline();
+    } finally {
       setSaving(false);
     }
   };
@@ -324,7 +331,7 @@ export default function CaptureScreen() {
           disabled={saving || !note.trim()}
           className="w-full h-[52px] bg-brand hover:bg-brand-light text-white text-base font-semibold rounded-xl transition-all disabled:opacity-50 animate-slide-up delay-200"
         >
-          {saving ? "Saving…" : isOnline ? "Save Snag" : "Save Offline"}
+          {saving ? "Saving…" : !isOnline ? "Save Offline" : "Save Snag"}
         </button>
       </div>
     </div>
