@@ -27,6 +27,9 @@ export interface SiteVisit {
   inspector: string;
   attendees: string;
   access_notes: string;
+  checker: string;
+  reviewer: string;
+  approver: string;
   created_at: string;
   updated_at: string;
 }
@@ -212,6 +215,9 @@ export const siteVisits = {
     inspector?: string;
     attendees?: string;
     access_notes?: string;
+    checker?: string;
+    reviewer?: string;
+    approver?: string;
   }) {
     return apiFetch<SiteVisit>("/site-visits/", {
       method: "POST",

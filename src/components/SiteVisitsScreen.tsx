@@ -20,6 +20,9 @@ export default function SiteVisitsScreen() {
   const [weather, setWeather] = useState("");
   const [attendees, setAttendees] = useState("");
   const [accessNotes, setAccessNotes] = useState("");
+  const [checker, setChecker] = useState("");
+  const [reviewer, setReviewer] = useState("");
+  const [approver, setApprover] = useState("");
 
   // Fetch visits
   useEffect(() => {
@@ -29,6 +32,13 @@ export default function SiteVisitsScreen() {
       try {
         const data = await visitsApi.list(currentProject!.id);
         setVisits(data);
+        // Pre-fill checker/reviewer/approver from last visit
+        if (data.length > 0) {
+          const last = data[0];
+          setChecker((last as any).checker || "");
+          setReviewer((last as any).reviewer || "");
+          setApprover((last as any).approver || "");
+        }
       } catch (err) {
         console.error("Failed to load visits:", err);
       } finally {
@@ -46,6 +56,9 @@ export default function SiteVisitsScreen() {
         weather,
         attendees,
         access_notes: accessNotes,
+        checker,
+        reviewer,
+        approver,
       });
       setVisits([created, ...visits]);
       setShowModal(false);
@@ -53,7 +66,6 @@ export default function SiteVisitsScreen() {
       setAttendees("");
       setAccessNotes("");
       showToast(`Visit #${created.visit_no} created`);
-      // Auto-open the new visit
       setCurrentVisit(created);
       setScreen("snags");
     } catch (err: any) {
@@ -260,6 +272,31 @@ export default function SiteVisitsScreen() {
                 <input value={accessNotes} onChange={(e) => setAccessNotes(e.target.value)} placeholder="e.g. Scaffolding required for levels 2-4"
                   className="w-full px-3.5 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
                 />
+              </div>
+
+              {/* Document Control roles (copied from previous visit) */}
+              <div className="pt-2 border-t border-[var(--border)]">
+                <p className="text-[10px] text-[var(--text3)] mb-2">Document Control (for PDF report)</p>
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <label className="text-[10px] text-[var(--text3)] block mb-1">Checker</label>
+                    <input value={checker} onChange={(e) => setChecker(e.target.value)} placeholder="Name"
+                      className="w-full px-2.5 py-2 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-xs text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-[var(--text3)] block mb-1">Reviewer</label>
+                    <input value={reviewer} onChange={(e) => setReviewer(e.target.value)} placeholder="Name"
+                      className="w-full px-2.5 py-2 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-xs text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-[var(--text3)] block mb-1">Approver</label>
+                    <input value={approver} onChange={(e) => setApprover(e.target.value)} placeholder="Name"
+                      className="w-full px-2.5 py-2 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-xs text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
