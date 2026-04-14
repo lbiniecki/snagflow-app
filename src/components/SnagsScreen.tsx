@@ -157,6 +157,26 @@ export default function SnagsScreen() {
     setEditPri(s.priority);
   };
 
+  const savePhoto = async (url: string, snagNote: string) => {
+    try {
+      showToast("Saving photo…");
+      const resp = await fetch(url);
+      const blob = await resp.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      const safeName = snagNote.slice(0, 20).replace(/[^a-zA-Z0-9]/g, "-") || "snag";
+      a.download = `voxsite-${safeName}.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+      showToast("Photo saved");
+    } catch {
+      showToast("Failed to save photo");
+    }
+  };
+
   // Hide bottom nav when any modal is open
   const modalOpen = !!editSnag || showReport;
 
@@ -228,8 +248,15 @@ export default function SnagsScreen() {
               <div className="flex gap-3">
                 {/* Photo */}
                 {s.photo_url ? (
-                  <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
+                  <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 group">
                     <img src={s.photo_url} alt="" className="w-full h-full object-cover" />
+                    <button
+                      onClick={(e) => { e.stopPropagation(); savePhoto(s.photo_url!, s.note); }}
+                      className="absolute inset-0 bg-black/0 group-hover:bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 active:opacity-100 transition-all"
+                      title="Save photo"
+                    >
+                      <Download className="w-5 h-5 text-white drop-shadow" />
+                    </button>
                   </div>
                 ) : (
                   <div className="w-16 h-16 rounded-lg bg-[var(--bg3)] flex items-center justify-center flex-shrink-0">
@@ -274,6 +301,15 @@ export default function SnagsScreen() {
                     title="Close with photo"
                   >
                     <Camera className="w-4 h-4" />
+                  </button>
+                )}
+                {s.photo_url && (
+                  <button
+                    onClick={() => savePhoto(s.photo_url!, s.note)}
+                    className="p-2 rounded-lg bg-[var(--surface)] text-[var(--text2)] hover:text-white transition-colors"
+                    title="Save photo"
+                  >
+                    <Download className="w-4 h-4" />
                   </button>
                 )}
                 <button onClick={() => openEdit(s)} className="p-2 rounded-lg bg-[var(--surface)] text-[var(--text2)] hover:text-white transition-colors">
