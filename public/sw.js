@@ -1,65 +1,53 @@
-const CACHE_NAME = "snagflow-v1";
-const STATIC_ASSETS = ["/", "/manifest.json"];
+// VoxSite Service Worker — caches app shell for offline launch
+const CACHE_NAME = 'voxsite-v1';
 
-// Install: cache shell
-self.addEventListener("install", (event) => {
+// Install: cache essential files
+self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll([
+        '/',
+        '/manifest.json',
+        '/icon-192.png',
+        '/icon-512.png',
+      ]);
+    })
   );
   self.skipWaiting();
 });
 
 // Activate: clean old caches
-self.addEventListener("activate", (event) => {
+self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(
-        keys
-          .filter((key) => key !== CACHE_NAME)
-          .map((key) => caches.delete(key))
-      )
+      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
     )
   );
   self.clients.claim();
 });
 
-// Fetch: network-first for API, cache-first for static
-self.addEventListener("fetch", (event) => {
-  const { request } = event;
-  const url = new URL(request.url);
+// Fetch: network-first for API, cache-first for assets
+self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
 
-  // Skip non-GET and API calls
-  if (request.method !== "GET" || url.pathname.startsWith("/api")) {
+  // Skip non-GET and API requests
+  if (event.request.method !== 'GET' || url.pathname.startsWith('/api')) {
     return;
   }
 
   event.respondWith(
-    caches.match(request).then((cached) => {
-      const fetchPromise = fetch(request)
-        .then((response) => {
-          // Cache successful responses
-          if (response.ok) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-          }
-          return response;
-        })
-        .catch(() => cached); // Fallback to cache if offline
-
-      return cached || fetchPromise;
-    })
+    fetch(event.request)
+      .then((response) => {
+        // Cache successful responses
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        }
+        return response;
+      })
+      .catch(() => {
+        // Offline: serve from cache
+        return caches.match(event.request).then((cached) => cached || caches.match('/'));
+      })
   );
 });
-
-// Background sync for offline snag submissions
-self.addEventListener("sync", (event) => {
-  if (event.tag === "sync-snags") {
-    event.waitUntil(syncOfflineSnags());
-  }
-});
-
-async function syncOfflineSnags() {
-  // Retrieve queued snags from IndexedDB and POST them
-  // Implementation depends on your offline queue setup
-  console.log("[SW] Syncing offline snags...");
-}
