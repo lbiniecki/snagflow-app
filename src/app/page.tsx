@@ -17,10 +17,20 @@ export default function Home() {
 
   // Restore session on mount
   useEffect(() => {
-    const token = getToken();
+  const token = getToken();
     if (token) {
-      setAuth({ id: "restored", email: "user" }, token);
-      setScreen("projects");
+      fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"}/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((r) => r.ok ? r.json() : Promise.reject())
+        .then((user) => {
+          setAuth({ id: user.id, email: user.email }, token);
+          setScreen("projects");
+        })
+        .catch(() => {
+          setToken(null);
+          setScreen("login");
+        });
     }
   }, [setAuth, setScreen]);
 
