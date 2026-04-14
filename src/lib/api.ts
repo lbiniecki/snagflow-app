@@ -68,8 +68,9 @@ export interface CompanyMember {
   user_id: string;
   role: string;
   created_at: string;
+  email?: string;
+  full_name?: string;
 }
-
 export interface AuthResponse {
   access_token: string;
   user_id: string;
