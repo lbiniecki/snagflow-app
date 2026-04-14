@@ -10,6 +10,7 @@ import SnagsScreen from "@/components/SnagsScreen";
 import CaptureScreen from "@/components/CaptureScreen";
 import PricingScreen from "@/components/PricingScreen";
 import SettingsScreen from "@/components/SettingsScreen";
+import OfflineBanner from "@/components/OfflineBanner";
 import Toast from "@/components/Toast";
 
 export default function Home() {
@@ -17,7 +18,7 @@ export default function Home() {
 
   // Restore session on mount
   useEffect(() => {
-  const token = getToken();
+    const token = getToken();
     if (token) {
       fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"}/auth/me`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -36,6 +37,7 @@ export default function Home() {
 
   return (
     <>
+      {screen !== "login" && <OfflineBanner />}
       {screen === "login" && <LoginScreen />}
       {screen === "projects" && <ProjectsScreen />}
       {screen === "visits" && <SiteVisitsScreen />}
