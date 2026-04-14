@@ -12,20 +12,58 @@ export interface Project {
   client?: string;
   address?: string;
   user_id: string;
+  company_id?: string;
   snag_count: number;
   created_at: string;
+}
+
+export interface SiteVisit {
+  id: string;
+  project_id: string;
+  visit_no: number;
+  visit_date: string;
+  weather: string;
+  status: "open" | "closed";
+  inspector: string;
+  attendees: string;
+  access_notes: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Snag {
   id: string;
   project_id: string;
+  visit_id?: string;
   note: string;
   location?: string;
   status: "open" | "closed";
   priority: "low" | "medium" | "high";
   photo_url?: string;
+  photo_path?: string;
+  rectification_photo_path?: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface Company {
+  id: string;
+  name: string;
+  logo_path?: string;
+  plan: string;
+  max_users: number;
+  owner_id: string;
+  member_count?: number;
+  is_owner?: boolean;
+  created_at: string;
+}
+
+export interface CompanyMember {
+  id: string;
+  company_id: string;
+  user_id: string;
+  role: string;
+  created_at: string;
 }
 
 export interface AuthResponse {
@@ -85,7 +123,7 @@ async function apiFetch<T>(
 
   if (res.status === 401) {
     setToken(null);
-    window.location.href = "/login";
+    window.location.href = "/";
     throw new Error("Unauthorized");
   }
 
@@ -94,7 +132,6 @@ async function apiFetch<T>(
     throw new Error(error.detail || `HTTP ${res.status}`);
   }
 
-  // Handle 204 No Content
   if (res.status === 204) return undefined as T;
 
   return res.json();
@@ -157,17 +194,54 @@ export const projects = {
   },
 };
 
+// ─── Site Visits ──────────────────────────────────────────────
+export const siteVisits = {
+  list(projectId: string) {
+    return apiFetch<SiteVisit[]>(`/site-visits/?project_id=${projectId}`);
+  },
+
+  create(data: {
+    project_id: string;
+    weather?: string;
+    inspector?: string;
+    attendees?: string;
+    access_notes?: string;
+  }) {
+    return apiFetch<SiteVisit>("/site-visits/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  update(id: string, data: Partial<SiteVisit>) {
+    return apiFetch<SiteVisit>(`/site-visits/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  },
+
+  close(id: string) {
+    return apiFetch<SiteVisit>(`/site-visits/${id}/close`, {
+      method: "POST",
+    });
+  },
+
+  delete(id: string) {
+    return apiFetch<void>(`/site-visits/${id}`, { method: "DELETE" });
+  },
+};
+
 // ─── Snags ────────────────────────────────────────────────────
 export const snags = {
-  list(projectId: string, status?: string, priority?: string) {
+  list(projectId: string, visitId?: string) {
     const params = new URLSearchParams({ project_id: projectId });
-    if (status) params.set("status", status);
-    if (priority) params.set("priority", priority);
+    if (visitId) params.set("visit_id", visitId);
     return apiFetch<Snag[]>(`/snags/?${params}`);
   },
 
   create(data: {
     project_id: string;
+    visit_id?: string;
     note: string;
     location?: string;
     priority?: string;
@@ -175,6 +249,7 @@ export const snags = {
   }) {
     const form = new FormData();
     form.append("project_id", data.project_id);
+    if (data.visit_id) form.append("visit_id", data.visit_id);
     form.append("note", data.note);
     if (data.location) form.append("location", data.location);
     form.append("priority", data.priority || "medium");
@@ -199,7 +274,6 @@ export const snags = {
 
   closeWithPhoto(id: string, photo: File) {
     const form = new FormData();
-    form.append("status", "closed");
     form.append("photo", photo);
     return apiFetch<Snag>(`/snags/${id}/close`, {
       method: "POST",
@@ -222,12 +296,16 @@ export const transcription = {
 
 // ─── Reports ──────────────────────────────────────────────────
 export const reports = {
-  async downloadPdf(projectId: string, opts?: { weather?: string; visitNo?: string }) {
+  async downloadPdf(
+    projectId: string,
+    opts?: { visitId?: string; weather?: string; visitNo?: string }
+  ) {
     const token = getToken();
     const params = new URLSearchParams({
       include_closed: "true",
       include_photos: "true",
     });
+    if (opts?.visitId) params.set("visit_id", opts.visitId);
     if (opts?.weather) params.set("weather", opts.weather);
     if (opts?.visitNo) params.set("visit_no", opts.visitNo);
 
@@ -240,12 +318,14 @@ export const reports = {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `site-visit-report.pdf`;
+    const visitSuffix = opts?.visitNo ? `-visit-${opts.visitNo}` : "";
+    a.download = `site-visit-report${visitSuffix}.pdf`;
     a.click();
     URL.revokeObjectURL(url);
   },
 
-  preview(projectId: string) {
+  preview(projectId: string, visitId?: string) {
+    const params = visitId ? `?visit_id=${visitId}` : "";
     return apiFetch<{
       project: Project;
       summary: {
@@ -255,6 +335,59 @@ export const reports = {
         high_priority: number;
       };
       snags: Snag[];
-    }>(`/reports/${projectId}/preview`);
+    }>(`/reports/${projectId}/preview${params}`);
+  },
+};
+
+// ─── Companies ────────────────────────────────────────────────
+export const companies = {
+  getMyCompany() {
+    return apiFetch<Company | null>("/companies/me");
+  },
+
+  create(name: string) {
+    return apiFetch<Company>("/companies/", {
+      method: "POST",
+      body: JSON.stringify({ name }),
+    });
+  },
+
+  update(data: { name?: string }) {
+    return apiFetch<Company>("/companies/me", {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  },
+
+  uploadLogo(file: File) {
+    const form = new FormData();
+    form.append("file", file);
+    return apiFetch<{ logo_path: string; message: string }>("/companies/logo", {
+      method: "POST",
+      body: form,
+    });
+  },
+
+  deleteLogo() {
+    return apiFetch<{ message: string }>("/companies/logo", {
+      method: "DELETE",
+    });
+  },
+
+  listMembers() {
+    return apiFetch<CompanyMember[]>("/companies/members");
+  },
+
+  addMember(email: string, role = "member") {
+    return apiFetch<CompanyMember>("/companies/members", {
+      method: "POST",
+      body: JSON.stringify({ email, role }),
+    });
+  },
+
+  removeMember(memberId: string) {
+    return apiFetch<{ message: string }>(`/companies/members/${memberId}`, {
+      method: "DELETE",
+    });
   },
 };

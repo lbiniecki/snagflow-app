@@ -50,7 +50,7 @@ export default function ProjectsScreen() {
 
   const openProject = (p: typeof projects[0]) => {
     setCurrentProject(p);
-    setScreen("snags");
+    setScreen("visits");
   };
 
   const totalOpen = projects.reduce((sum, p) => sum + (p.snag_count || 0), 0);

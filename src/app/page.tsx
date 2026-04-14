@@ -5,9 +5,11 @@ import { useStore } from "@/lib/store";
 import { getToken, setToken } from "@/lib/api";
 import LoginScreen from "@/components/LoginScreen";
 import ProjectsScreen from "@/components/ProjectsScreen";
+import SiteVisitsScreen from "@/components/SiteVisitsScreen";
 import SnagsScreen from "@/components/SnagsScreen";
 import CaptureScreen from "@/components/CaptureScreen";
 import PricingScreen from "@/components/PricingScreen";
+import SettingsScreen from "@/components/SettingsScreen";
 import Toast from "@/components/Toast";
 
 export default function Home() {
@@ -17,8 +19,6 @@ export default function Home() {
   useEffect(() => {
     const token = getToken();
     if (token) {
-      // Token exists — skip login
-      // In production, verify token is still valid via /api/auth/verify
       setAuth({ id: "restored", email: "user" }, token);
       setScreen("projects");
     }
@@ -28,9 +28,11 @@ export default function Home() {
     <>
       {screen === "login" && <LoginScreen />}
       {screen === "projects" && <ProjectsScreen />}
+      {screen === "visits" && <SiteVisitsScreen />}
       {screen === "snags" && <SnagsScreen />}
       {screen === "capture" && <CaptureScreen />}
       {screen === "pricing" && <PricingScreen />}
+      {screen === "settings" && <SettingsScreen />}
       {toast && <Toast message={toast} />}
     </>
   );

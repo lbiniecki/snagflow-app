@@ -1,0 +1,260 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useStore } from "@/lib/store";
+import { siteVisits as visitsApi } from "@/lib/api";
+import {
+  ChevronLeft, Plus, X, ClipboardList, Lock, Unlock,
+  Calendar, CloudSun, Trash2,
+} from "lucide-react";
+import clsx from "clsx";
+import BottomNav from "./BottomNav";
+
+export default function SiteVisitsScreen() {
+  const {
+    currentProject, setScreen, visits, setVisits,
+    setCurrentVisit, showToast, loading, setLoading,
+  } = useStore();
+
+  const [showModal, setShowModal] = useState(false);
+  const [weather, setWeather] = useState("");
+  const [attendees, setAttendees] = useState("");
+  const [accessNotes, setAccessNotes] = useState("");
+
+  // Fetch visits
+  useEffect(() => {
+    if (!currentProject) return;
+    async function load() {
+      setLoading(true);
+      try {
+        const data = await visitsApi.list(currentProject!.id);
+        setVisits(data);
+      } catch (err) {
+        console.error("Failed to load visits:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, [currentProject, setVisits, setLoading]);
+
+  const handleCreate = async () => {
+    if (!currentProject) return;
+    try {
+      const created = await visitsApi.create({
+        project_id: currentProject.id,
+        weather,
+        attendees,
+        access_notes: accessNotes,
+      });
+      setVisits([created, ...visits]);
+      setShowModal(false);
+      setWeather("");
+      setAttendees("");
+      setAccessNotes("");
+      showToast(`Visit #${created.visit_no} created`);
+      // Auto-open the new visit
+      setCurrentVisit(created);
+      setScreen("snags");
+    } catch (err: any) {
+      showToast(err.message);
+    }
+  };
+
+  const closeVisit = async (id: string) => {
+    try {
+      const updated = await visitsApi.close(id);
+      setVisits(visits.map((v) => (v.id === id ? { ...v, status: "closed" as const } : v)));
+      showToast("Visit closed");
+    } catch (err: any) {
+      showToast(err.message);
+    }
+  };
+
+  const deleteVisit = async (id: string) => {
+    try {
+      await visitsApi.delete(id);
+      setVisits(visits.filter((v) => v.id !== id));
+      showToast("Visit deleted");
+    } catch (err: any) {
+      showToast(err.message);
+    }
+  };
+
+  const openVisit = (v: typeof visits[0]) => {
+    setCurrentVisit(v);
+    setScreen("snags");
+  };
+
+  const openCount = visits.filter((v) => v.status === "open").length;
+  const closedCount = visits.filter((v) => v.status === "closed").length;
+  const modalOpen = showModal;
+
+  return (
+    <div>
+      {/* Header */}
+      <div className="sticky top-0 z-40 bg-[var(--bg)] border-b border-[var(--border)] px-4 py-3 flex items-center gap-3">
+        <button onClick={() => setScreen("projects")} className="p-2 rounded-full hover:bg-[var(--bg3)] text-[var(--text2)]">
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+        <div className="flex-1 text-center min-w-0">
+          <h2 className="text-base font-semibold truncate">{currentProject?.name}</h2>
+          <p className="text-[11px] text-[var(--text3)]">{currentProject?.client}</p>
+        </div>
+        <div className="w-9" />
+      </div>
+
+      {/* Content */}
+      <div className="px-5 py-4 pb-28">
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-2.5 mb-5 animate-slide-up">
+          <div className="bg-[var(--bg2)] border border-[var(--border)] rounded-xl p-3 text-center">
+            <div className="text-xl font-bold font-mono">{visits.length}</div>
+            <div className="text-[10px] text-[var(--text3)] uppercase tracking-wider mt-0.5">Total Visits</div>
+          </div>
+          <div className="bg-[var(--bg2)] border border-[var(--border)] rounded-xl p-3 text-center">
+            <div className="text-xl font-bold font-mono text-brand">{openCount}</div>
+            <div className="text-[10px] text-[var(--text3)] uppercase tracking-wider mt-0.5">Open</div>
+          </div>
+          <div className="bg-[var(--bg2)] border border-[var(--border)] rounded-xl p-3 text-center">
+            <div className="text-xl font-bold font-mono text-green-400">{closedCount}</div>
+            <div className="text-[10px] text-[var(--text3)] uppercase tracking-wider mt-0.5">Closed</div>
+          </div>
+        </div>
+
+        {/* Visit list */}
+        {loading ? (
+          <div className="text-center py-12 text-[var(--text3)]">Loading…</div>
+        ) : visits.length === 0 ? (
+          <div className="text-center py-16 text-[var(--text3)] animate-fade-in">
+            <ClipboardList className="w-8 h-8 mx-auto mb-3 opacity-30" />
+            <p className="text-sm">No site visits yet</p>
+            <p className="text-xs mt-1">Tap + to start your first inspection</p>
+          </div>
+        ) : (
+          visits.map((v, i) => (
+            <div
+              key={v.id}
+              className="bg-[var(--bg2)] border border-[var(--border)] rounded-xl p-4 mb-2.5 animate-slide-up"
+              style={{ animationDelay: `${Math.min(i, 4) * 50}ms` }}
+            >
+              <button
+                onClick={() => openVisit(v)}
+                className="w-full text-left"
+              >
+                <div className="flex justify-between items-start">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-[15px] font-semibold">
+                      Site Visit #{v.visit_no}
+                    </h3>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-[11px] text-[var(--text3)] flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        {new Date(v.visit_date).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
+                      </span>
+                      {v.weather && (
+                        <span className="text-[11px] text-[var(--text3)] flex items-center gap-1">
+                          <CloudSun className="w-3 h-3" /> {v.weather}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <span
+                    className={clsx(
+                      "text-[11px] font-semibold px-2.5 py-0.5 rounded-full",
+                      v.status === "open"
+                        ? "text-brand bg-brand/10"
+                        : "text-green-400 bg-green-400/10"
+                    )}
+                  >
+                    {v.status === "open" ? "Open" : "Closed"}
+                  </span>
+                </div>
+                {v.inspector && (
+                  <p className="text-[11px] text-[var(--text3)] mt-1.5">Inspector: {v.inspector}</p>
+                )}
+              </button>
+
+              {/* Actions */}
+              <div className="flex gap-2 mt-3 pt-2.5 border-t border-[var(--border)]">
+                {v.status === "open" ? (
+                  <button
+                    onClick={() => closeVisit(v.id)}
+                    className="flex-1 py-2 rounded-lg text-xs font-semibold bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-all flex items-center justify-center gap-1.5"
+                  >
+                    <Lock className="w-3.5 h-3.5" /> Close Visit
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => openVisit(v)}
+                    className="flex-1 py-2 rounded-lg text-xs font-semibold bg-[var(--surface)] text-[var(--text2)] hover:text-white transition-all flex items-center justify-center gap-1.5"
+                  >
+                    <Unlock className="w-3.5 h-3.5" /> View Report
+                  </button>
+                )}
+                <button
+                  onClick={() => deleteVisit(v.id)}
+                  className="p-2 rounded-lg bg-red-400/10 text-red-400 hover:bg-red-400/20 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* FAB */}
+      {!modalOpen && (
+        <button
+          onClick={() => setShowModal(true)}
+          className="fixed bottom-24 right-[max(20px,calc((100%-480px)/2+20px))] w-14 h-14 rounded-full bg-brand text-white flex items-center justify-center shadow-lg shadow-brand/40 hover:scale-110 active:scale-95 transition-transform z-40"
+        >
+          <Plus className="w-6 h-6" />
+        </button>
+      )}
+
+      {/* Create Visit modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-end justify-center animate-fade-in" onClick={() => setShowModal(false)}>
+          <div className="w-full max-w-[480px] bg-[var(--bg2)] rounded-t-2xl p-5 animate-slide-up" onClick={(e) => e.stopPropagation()}>
+            <div className="w-10 h-1 bg-[var(--border)] rounded-full mx-auto mb-4" />
+            <div className="flex justify-between items-center mb-5">
+              <h3 className="text-lg font-bold">New Site Visit</h3>
+              <button onClick={() => setShowModal(false)} className="text-[var(--text3)]"><X className="w-5 h-5" /></button>
+            </div>
+
+            <div className="space-y-3 mb-5">
+              <div>
+                <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">Weather</label>
+                <input value={weather} onChange={(e) => setWeather(e.target.value)} placeholder="e.g. Sunny, 18°C, light wind"
+                  className="w-full px-3.5 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">Attendees</label>
+                <input value={attendees} onChange={(e) => setAttendees(e.target.value)} placeholder="e.g. John, Mary, Client rep"
+                  className="w-full px-3.5 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">Access Notes</label>
+                <input value={accessNotes} onChange={(e) => setAccessNotes(e.target.value)} placeholder="e.g. Scaffolding required for levels 2-4"
+                  className="w-full px-3.5 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
+                />
+              </div>
+            </div>
+
+            <button onClick={handleCreate}
+              className="w-full h-12 bg-brand hover:bg-brand-light text-white font-semibold rounded-lg transition-all"
+            >
+              Start Inspection
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!modalOpen && <BottomNav active="projects" />}
+    </div>
+  );
+}

@@ -2,7 +2,7 @@
  * Global app state with Zustand
  */
 import { create } from "zustand";
-import type { Project, Snag } from "./api";
+import type { Project, Snag, SiteVisit } from "./api";
 
 interface AppState {
   // Auth
@@ -12,7 +12,7 @@ interface AppState {
   logout: () => void;
 
   // Navigation
-  screen: "login" | "projects" | "snags" | "capture" | "pricing";
+  screen: "login" | "projects" | "visits" | "snags" | "capture" | "pricing" | "settings";
   setScreen: (screen: AppState["screen"]) => void;
 
   // Projects
@@ -20,6 +20,12 @@ interface AppState {
   currentProject: Project | null;
   setProjects: (projects: Project[]) => void;
   setCurrentProject: (project: Project | null) => void;
+
+  // Site Visits
+  visits: SiteVisit[];
+  currentVisit: SiteVisit | null;
+  setVisits: (visits: SiteVisit[]) => void;
+  setCurrentVisit: (visit: SiteVisit | null) => void;
 
   // Snags
   snags: Snag[];
@@ -53,6 +59,12 @@ export const useStore = create<AppState>((set) => ({
   currentProject: null,
   setProjects: (projects) => set({ projects }),
   setCurrentProject: (project) => set({ currentProject: project }),
+
+  // Site Visits
+  visits: [],
+  currentVisit: null,
+  setVisits: (visits) => set({ visits }),
+  setCurrentVisit: (visit) => set({ currentVisit: visit }),
 
   // Snags
   snags: [],

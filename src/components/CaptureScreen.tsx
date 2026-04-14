@@ -15,7 +15,7 @@ const PRIORITY_STYLES = {
 };
 
 export default function CaptureScreen() {
-  const { currentProject, setScreen, setSnags, snags, showToast } = useStore();
+  const { currentProject, currentVisit, setScreen, setSnags, snags, showToast } = useStore();
   const { isRecording, secondsLeft, startRecording, stopRecording, error: micError } = useAudioRecorder();
 
   const [note, setNote] = useState("");
@@ -94,6 +94,7 @@ export default function CaptureScreen() {
     try {
       const created = await snagsApi.create({
         project_id: currentProject.id,
+        visit_id: currentVisit?.id,
         note,
         location: location || undefined,
         priority,

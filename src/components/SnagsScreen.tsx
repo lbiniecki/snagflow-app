@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useStore } from "@/lib/store";
-import { snags as snagsApi, reports as reportsApi, transcription } from "@/lib/api";
+import { snags as snagsApi, reports as reportsApi, transcription, siteVisits as visitsApi } from "@/lib/api";
 import {
   ChevronLeft, FileText, Plus, Pencil, Trash2, Camera,
   MapPin, Download, X, Mic,
@@ -19,6 +19,7 @@ export default function SnagsScreen() {
   const {
     currentProject, setScreen, snags, setSnags,
     filter, setFilter, showToast, loading, setLoading,
+    currentVisit,
   } = useStore();
 
   const [showReport, setShowReport] = useState(false);
@@ -36,13 +37,13 @@ export default function SnagsScreen() {
   const closePhotoRef = useRef<HTMLInputElement>(null);
   const [closingSnagId, setClosingSnagId] = useState<string | null>(null);
 
-  // Fetch snags
+  // Fetch snags (scoped to current visit if available)
   useEffect(() => {
     if (!currentProject) return;
     async function load() {
       setLoading(true);
       try {
-        const data = await snagsApi.list(currentProject!.id);
+        const data = await snagsApi.list(currentProject!.id, currentVisit?.id);
         setSnags(data);
       } catch (err) {
         console.error("Failed to load snags:", err);
@@ -51,7 +52,7 @@ export default function SnagsScreen() {
       }
     }
     load();
-  }, [currentProject, setSnags, setLoading]);
+  }, [currentProject, currentVisit, setSnags, setLoading]);
 
   const filtered = filter === "all" ? snags : snags.filter((s) => s.status === filter);
   const openCount = snags.filter((s) => s.status === "open").length;
@@ -117,7 +118,11 @@ export default function SnagsScreen() {
     if (!currentProject) return;
     setDownloading(true);
     try {
-      await reportsApi.downloadPdf(currentProject.id, { weather, visitNo });
+      await reportsApi.downloadPdf(currentProject.id, {
+        visitId: currentVisit?.id,
+        weather,
+        visitNo: visitNo || String(currentVisit?.visit_no || ""),
+      });
       showToast("Report downloaded");
     } catch (err: any) {
       showToast(err.message);
@@ -193,12 +198,16 @@ export default function SnagsScreen() {
       />
       {/* Header */}
       <div className="sticky top-0 z-40 bg-[var(--bg)] border-b border-[var(--border)] px-4 py-3 flex items-center gap-3">
-        <button onClick={() => setScreen("projects")} className="p-2 rounded-full hover:bg-[var(--bg3)] text-[var(--text2)]">
+        <button onClick={() => setScreen("visits")} className="p-2 rounded-full hover:bg-[var(--bg3)] text-[var(--text2)]">
           <ChevronLeft className="w-5 h-5" />
         </button>
         <div className="flex-1 text-center min-w-0">
-          <h2 className="text-base font-semibold truncate">{currentProject?.name}</h2>
-          <p className="text-[11px] text-[var(--text3)]">{currentProject?.client}</p>
+          <h2 className="text-base font-semibold truncate">
+            {currentVisit ? `Visit #${currentVisit.visit_no}` : currentProject?.name}
+          </h2>
+          <p className="text-[11px] text-[var(--text3)]">
+            {currentProject?.name}{currentVisit?.weather ? ` • ${currentVisit.weather}` : ""}
+          </p>
         </div>
         <button onClick={() => setShowReport(true)} className="p-2 rounded-full hover:bg-[var(--bg3)] text-[var(--text2)]">
           <FileText className="w-5 h-5" />
