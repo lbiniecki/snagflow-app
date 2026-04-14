@@ -4,8 +4,10 @@ import { useState, useRef } from "react";
 import { useStore } from "@/lib/store";
 import { snags as snagsApi, transcription } from "@/lib/api";
 import { useAudioRecorder } from "@/lib/useAudioRecorder";
+import { useOnlineStatus } from "@/lib/useOnlineStatus";
 import { compressImage } from "@/lib/compressImage";
-import { ChevronLeft, Camera, Mic, X, Plus } from "lucide-react";
+import { savePendingSnag, type PendingSnag } from "@/lib/offlineStore";
+import { ChevronLeft, Camera, Mic, X, Plus, WifiOff } from "lucide-react";
 import clsx from "clsx";
 
 const PRIORITY_STYLES = {
@@ -24,6 +26,7 @@ interface PhotoSlot {
 export default function CaptureScreen() {
   const { currentProject, currentVisit, setScreen, setSnags, snags, showToast } = useStore();
   const { isRecording, secondsLeft, startRecording, stopRecording, error: micError } = useAudioRecorder();
+  const isOnline = useOnlineStatus();
 
   const [note, setNote] = useState("");
   const [location, setLocation] = useState("");
@@ -99,25 +102,57 @@ export default function CaptureScreen() {
   const handleSubmit = async () => {
     if (!note.trim() || !currentProject) return;
     setSaving(true);
+
+    if (isOnline) {
+      // ── Online: upload directly ──
+      try {
+        const created = await snagsApi.create({
+          project_id: currentProject.id,
+          visit_id: currentVisit?.id,
+          note,
+          location: location || undefined,
+          priority,
+          photo: photos[0]?.file,
+          photo2: photos[1]?.file,
+          photo3: photos[2]?.file,
+          photo4: photos[3]?.file,
+        });
+        setSnags([created, ...snags]);
+        showToast("Snag saved!");
+        setScreen("snags");
+      } catch (err: any) {
+        // Upload failed — try saving offline
+        await saveOffline();
+      } finally {
+        setSaving(false);
+      }
+    } else {
+      // ── Offline: save locally ──
+      await saveOffline();
+      setSaving(false);
+    }
+  };
+
+  const saveOffline = async () => {
     try {
-      const created = await snagsApi.create({
-        project_id: currentProject.id,
+      const photoBlobs: Blob[] = photos.map((p) => p.file);
+      const pending: PendingSnag = {
+        id: `local_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        project_id: currentProject!.id,
         visit_id: currentVisit?.id,
         note,
         location: location || undefined,
         priority,
-        photo: photos[0]?.file,
-        photo2: photos[1]?.file,
-        photo3: photos[2]?.file,
-        photo4: photos[3]?.file,
-      });
-      setSnags([created, ...snags]);
-      showToast("Snag saved!");
+        photos: photoBlobs,
+        created_at: new Date().toISOString(),
+        status: "pending",
+        retries: 0,
+      };
+      await savePendingSnag(pending);
+      showToast("Saved offline — will sync when connected");
       setScreen("snags");
     } catch (err: any) {
-      showToast(err.message);
-    } finally {
-      setSaving(false);
+      showToast("Failed to save: " + (err.message || ""));
     }
   };
 
@@ -129,10 +164,22 @@ export default function CaptureScreen() {
           <ChevronLeft className="w-5 h-5" />
         </button>
         <h2 className="text-base font-semibold flex-1 text-center">New Snag</h2>
-        <div className="w-9" />
+        {!isOnline && (
+          <span className="flex items-center gap-1 text-[10px] text-red-400 font-semibold">
+            <WifiOff className="w-3.5 h-3.5" /> Offline
+          </span>
+        )}
+        {isOnline && <div className="w-9" />}
       </div>
 
       <div className="px-5 py-4 pb-8">
+        {/* Offline notice */}
+        {!isOnline && (
+          <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 mb-4 text-center">
+            <p className="text-xs text-red-400 font-semibold">No connection — snag will be saved locally and synced later</p>
+          </div>
+        )}
+
         {/* Photos (up to 4) */}
         <div className="mb-5 animate-slide-up">
           <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-2">
@@ -198,13 +245,15 @@ export default function CaptureScreen() {
             />
             <button
               onClick={() => handleMic("note", setNote)}
-              disabled={transcribing || (isRecording && micTarget !== "note")}
+              disabled={transcribing || (isRecording && micTarget !== "note") || !isOnline}
               className={clsx(
                 "w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 transition-all",
                 isRecording && micTarget === "note"
                   ? "bg-red-500 text-white animate-recording"
-                  : "bg-[var(--surface)] text-[var(--text2)] hover:text-white hover:bg-[var(--bg3)]"
+                  : "bg-[var(--surface)] text-[var(--text2)] hover:text-white hover:bg-[var(--bg3)]",
+                !isOnline && "opacity-30"
               )}
+              title={!isOnline ? "Voice requires connection" : ""}
             >
               <Mic className="w-5 h-5" />
             </button>
@@ -232,12 +281,13 @@ export default function CaptureScreen() {
             />
             <button
               onClick={() => handleMic("location", setLocation)}
-              disabled={transcribing || (isRecording && micTarget !== "location")}
+              disabled={transcribing || (isRecording && micTarget !== "location") || !isOnline}
               className={clsx(
                 "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all",
                 isRecording && micTarget === "location"
                   ? "bg-red-500 text-white animate-recording"
-                  : "bg-[var(--surface)] text-[var(--text2)] hover:text-white hover:bg-[var(--bg3)]"
+                  : "bg-[var(--surface)] text-[var(--text2)] hover:text-white hover:bg-[var(--bg3)]",
+                !isOnline && "opacity-30"
               )}
             >
               <Mic className="w-4 h-4" />
@@ -274,7 +324,7 @@ export default function CaptureScreen() {
           disabled={saving || !note.trim()}
           className="w-full h-[52px] bg-brand hover:bg-brand-light text-white text-base font-semibold rounded-xl transition-all disabled:opacity-50 animate-slide-up delay-200"
         >
-          {saving ? "Saving…" : "Save Snag"}
+          {saving ? "Saving…" : isOnline ? "Save Snag" : "Save Offline"}
         </button>
       </div>
     </div>
