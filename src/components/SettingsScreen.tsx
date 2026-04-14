@@ -529,3 +529,4 @@ export default function SettingsScreen() {
     </div>
   );
 }
+// updated
