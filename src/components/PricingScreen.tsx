@@ -1,250 +1,266 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Star, ChevronLeft } from "lucide-react";
 import { useStore } from "@/lib/store";
+import { ChevronLeft, Check, Zap } from "lucide-react";
 import clsx from "clsx";
+import BottomNav from "./BottomNav";
 
-interface Tier {
-  name: string;
-  price: string;
-  period: string;
-  description: string;
-  features: string[];
-  highlighted?: boolean;
-  cta: string;
-}
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
-const tiers: Tier[] = [
+const PLANS = [
   {
     name: "Free",
-    price: "€0",
-    period: "forever",
-    description: "Try VoxSite with a single project",
-    features: [
-      "1 project",
-      "Up to 50 snags",
-      "Watermarked PDF reports",
-      "Voice dictation",
-      "Photo capture",
-    ],
-    cta: "Current Plan",
+    monthlyPrice: 0,
+    annualPrice: 0,
+    priceIdMonthly: null,
+    priceIdAnnual: null,
+    users: "1 user",
+    projects: "2 projects",
+    snags: "20 snags/month",
+    features: ["4 photos/snag", "Voice dictation", "PDF reports", "Offline mode"],
   },
   {
     name: "Starter",
-    price: "€24",
-    period: "/mo",
-    description: "For independent inspectors",
-    features: [
-      "5 projects",
-      "1 user",
-      "Unlimited snags",
-      "Branded PDF reports",
-      "Voice dictation",
-      "Photo capture",
-    ],
-    cta: "Upgrade",
+    monthlyPrice: 24,
+    annualPrice: 240,
+    priceIdMonthly: "price_1TM9TGIzCuyhGXgYAI34UPiO",
+    priceIdAnnual: "price_1TM9aIIzCuyhGXgY9TeUq3ch",
+    users: "3 users",
+    projects: "5 projects",
+    snags: "100 snags/month",
+    features: ["Everything in Free", "4 photos/snag", "Voice dictation", "PDF reports"],
   },
   {
     name: "Team",
-    price: "€49",
-    period: "/mo",
-    description: "For small teams on site",
-    features: [
-      "15 projects",
-      "3 users",
-      "Unlimited snags",
-      "Branded PDF reports",
-      "Voice dictation",
-      "Close with photo",
-      "Weather & visit tracking",
-    ],
-    highlighted: true,
-    cta: "Upgrade",
+    monthlyPrice: 49,
+    annualPrice: 490,
+    priceIdMonthly: "price_1TM9U3IzCuyhGXgYIFVd7fs1",
+    priceIdAnnual: "price_1TM9akIzCuyhGXgYmbDAHROz",
+    users: "10 users",
+    projects: "15 projects",
+    snags: "500 snags/month",
+    popular: true,
+    features: ["Everything in Starter", "Company logo on PDF", "Viewer roles"],
   },
   {
     name: "Pro",
-    price: "€99",
-    period: "/mo",
-    description: "For growing companies",
-    features: [
-      "Unlimited projects",
-      "10 users",
-      "All Team features",
-      "CSV & Excel export",
-      "Report customisation",
-      "Priority email support",
-    ],
-    cta: "Upgrade",
+    monthlyPrice: 99,
+    annualPrice: 990,
+    priceIdMonthly: "price_1TM9USIzCuyhGXgY8gYqlcMP",
+    priceIdAnnual: "price_1TM9bJIzCuyhGXgYEpO1hAUF",
+    users: "25 users",
+    projects: "Unlimited",
+    snags: "Unlimited",
+    features: ["Everything in Team", "Priority support"],
   },
   {
     name: "Business",
-    price: "€179",
-    period: "/mo",
-    description: "For established firms",
-    features: [
-      "Unlimited projects",
-      "25 users",
-      "All Pro features",
-      "Custom branding",
-      "Company logo on reports",
-      "Priority support",
-      "Dedicated account manager",
-    ],
-    cta: "Upgrade",
-  },
-  {
-    name: "Enterprise",
-    price: "€299+",
-    period: "/mo",
-    description: "For large organisations",
-    features: [
-      "Unlimited everything",
-      "Unlimited users",
-      "All Business features",
-      "API access",
-      "Dedicated onboarding",
-      "SLA guarantee",
-      "Custom integrations",
-    ],
-    cta: "Contact Us",
+    monthlyPrice: 179,
+    annualPrice: 1790,
+    priceIdMonthly: "price_1TM9UlIzCuyhGXgYCVxWXZsC",
+    priceIdAnnual: "price_1TM9bmIzCuyhGXgYv9aUGOGR",
+    users: "50 users",
+    projects: "Unlimited",
+    snags: "Unlimited",
+    features: ["Everything in Pro", "Dedicated support"],
   },
 ];
 
 export default function PricingScreen() {
-  const { setScreen } = useStore();
-  const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
+  const { setScreen, showToast } = useStore();
+  const [annual, setAnnual] = useState(false);
+  const [loading, setLoading] = useState<string | null>(null);
+
+  const handleCheckout = async (priceId: string | null) => {
+    if (!priceId) return;
+    setLoading(priceId);
+
+    try {
+      const token = localStorage.getItem("voxsite_token");
+      const res = await fetch(`${API}/billing/checkout`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ price_id: priceId }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.detail || "Checkout failed");
+      }
+
+      const data = await res.json();
+      window.location.href = data.checkout_url;
+    } catch (err: any) {
+      showToast(err.message);
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  const handlePortal = async () => {
+    try {
+      const token = localStorage.getItem("voxsite_token");
+      const res = await fetch(`${API}/billing/portal`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.detail || "Portal failed");
+      }
+
+      const data = await res.json();
+      window.location.href = data.portal_url;
+    } catch (err: any) {
+      showToast(err.message);
+    }
+  };
 
   return (
     <div>
       {/* Header */}
       <div className="sticky top-0 z-40 bg-[var(--bg)] border-b border-[var(--border)] px-4 py-3 flex items-center gap-3">
-        <button
-          onClick={() => setScreen("projects")}
-          className="p-2 rounded-full hover:bg-[var(--bg3)] text-[var(--text2)]"
-        >
+        <button onClick={() => setScreen("projects")} className="p-2 rounded-full hover:bg-[var(--bg3)] text-[var(--text2)]">
           <ChevronLeft className="w-5 h-5" />
         </button>
-        <h2 className="text-base font-semibold flex-1 text-center">Plans & Pricing</h2>
+        <h2 className="text-base font-semibold flex-1 text-center">Pricing</h2>
         <div className="w-9" />
       </div>
 
-      <div className="px-5 py-6 pb-12">
-        {/* Title */}
-        <div className="text-center mb-6 animate-slide-up">
-          <h1 className="text-2xl font-bold mb-2">Choose your plan</h1>
-          <p className="text-sm text-[var(--text3)]">
-            Start free, upgrade when you need more
-          </p>
+      <div className="px-5 py-6 pb-28">
+        {/* Toggle */}
+        <div className="flex items-center justify-center gap-3 mb-6">
+          <span className={clsx("text-xs font-semibold", !annual ? "text-white" : "text-[var(--text3)]")}>Monthly</span>
+          <button
+            onClick={() => setAnnual(!annual)}
+            className={clsx(
+              "w-12 h-6 rounded-full relative transition-colors",
+              annual ? "bg-brand" : "bg-[var(--bg3)]"
+            )}
+          >
+            <div className={clsx(
+              "w-5 h-5 rounded-full bg-white absolute top-0.5 transition-transform",
+              annual ? "translate-x-6" : "translate-x-0.5"
+            )} />
+          </button>
+          <span className={clsx("text-xs font-semibold", annual ? "text-white" : "text-[var(--text3)]")}>
+            Annual <span className="text-green-400 text-[10px]">Save 17%</span>
+          </span>
         </div>
 
-        {/* Billing toggle */}
-        <div className="flex justify-center mb-6 animate-slide-up delay-50">
-          <div className="bg-[var(--bg2)] border border-[var(--border)] rounded-full p-1 flex">
-            <button
-              onClick={() => setBilling("monthly")}
-              className={clsx(
-                "px-4 py-1.5 rounded-full text-xs font-semibold transition-all",
-                billing === "monthly"
-                  ? "bg-brand text-white"
-                  : "text-[var(--text3)]"
-              )}
-            >
-              Monthly
-            </button>
-            <button
-              onClick={() => setBilling("annual")}
-              className={clsx(
-                "px-4 py-1.5 rounded-full text-xs font-semibold transition-all",
-                billing === "annual"
-                  ? "bg-brand text-white"
-                  : "text-[var(--text3)]"
-              )}
-            >
-              Annual
-              <span className="ml-1 text-[10px] text-green-400">-20%</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Tier cards */}
-        <div className="space-y-3">
-          {tiers.map((tier, i) => {
-            // Calculate annual price
-            const monthlyNum = parseFloat(tier.price.replace(/[^0-9.]/g, ""));
-            const displayPrice =
-              billing === "annual" && monthlyNum > 0
-                ? `€${Math.round(monthlyNum * 0.8)}`
-                : tier.price;
-            const displayPeriod =
-              billing === "annual" && monthlyNum > 0
-                ? "/mo billed annually"
-                : tier.period;
+        {/* Plans */}
+        <div className="space-y-4">
+          {PLANS.map((plan) => {
+            const priceId = annual ? plan.priceIdAnnual : plan.priceIdMonthly;
+            const price = annual ? plan.annualPrice : plan.monthlyPrice;
+            const isLoading = loading === priceId;
 
             return (
               <div
-                key={tier.name}
+                key={plan.name}
                 className={clsx(
-                  "rounded-xl p-4 border transition-all animate-slide-up",
-                  tier.highlighted
-                    ? "bg-brand/10 border-brand"
-                    : "bg-[var(--bg2)] border-[var(--border)]"
+                  "border rounded-2xl p-4 transition-all",
+                  plan.popular
+                    ? "border-brand bg-brand/5"
+                    : "border-[var(--border)] bg-[var(--bg2)]"
                 )}
-                style={{ animationDelay: `${i * 60}ms` }}
               >
-                <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center justify-between mb-3">
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="text-[15px] font-bold">{tier.name}</h3>
-                      {tier.highlighted && (
-                        <span className="flex items-center gap-0.5 text-[10px] font-bold text-brand bg-brand/20 px-2 py-0.5 rounded-full">
-                          <Star className="w-3 h-3" /> POPULAR
-                        </span>
+                      <h3 className="text-base font-bold">{plan.name}</h3>
+                      {plan.popular && (
+                        <span className="text-[9px] font-bold uppercase bg-brand text-white px-2 py-0.5 rounded-full">Popular</span>
                       )}
                     </div>
-                    <p className="text-[11px] text-[var(--text3)] mt-0.5">
-                      {tier.description}
+                    <p className="text-[11px] text-[var(--text3)]">
+                      {plan.users} • {plan.projects} • {plan.snags}
                     </p>
                   </div>
-                  <div className="text-right flex-shrink-0">
-                    <span className="text-xl font-bold">{displayPrice}</span>
-                    <span className="text-[11px] text-[var(--text3)] ml-0.5">
-                      {displayPeriod}
-                    </span>
+                  <div className="text-right">
+                    {price === 0 ? (
+                      <span className="text-lg font-bold">Free</span>
+                    ) : annual ? (
+                      <>
+                        <span className="text-lg font-bold">€{price}</span>
+                        <span className="text-[11px] text-[var(--text3)]">/year</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-lg font-bold">€{price}</span>
+                        <span className="text-[11px] text-[var(--text3)]">/mo</span>
+                      </>
+                    )}
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-x-4 gap-y-1.5 mb-3">
-                  {tier.features.map((f) => (
-                    <div key={f} className="flex items-center gap-1.5">
-                      <Check className="w-3 h-3 text-green-400 flex-shrink-0" />
-                      <span className="text-[11px] text-[var(--text2)]">{f}</span>
-                    </div>
+                {/* Features */}
+                <div className="flex flex-wrap gap-x-4 gap-y-1 mb-3">
+                  {plan.features.map((f) => (
+                    <span key={f} className="text-[10px] text-[var(--text2)] flex items-center gap-1">
+                      <Check className="w-3 h-3 text-green-400" /> {f}
+                    </span>
                   ))}
                 </div>
 
-                <button
-                  className={clsx(
-                    "w-full py-2.5 rounded-lg text-xs font-semibold transition-all",
-                    tier.highlighted
-                      ? "bg-brand text-white hover:bg-brand-light"
-                      : tier.cta === "Current Plan"
-                      ? "bg-[var(--surface)] text-[var(--text3)] border border-[var(--border)] cursor-default"
-                      : "bg-[var(--surface)] text-white border border-[var(--border)] hover:border-brand"
-                  )}
-                  disabled={tier.cta === "Current Plan"}
-                >
-                  {tier.cta}
-                </button>
+                {/* CTA */}
+                {priceId ? (
+                  <button
+                    onClick={() => handleCheckout(priceId)}
+                    disabled={isLoading}
+                    className={clsx(
+                      "w-full py-2.5 rounded-lg text-xs font-semibold transition-all",
+                      plan.popular
+                        ? "bg-brand text-white hover:bg-brand-light"
+                        : "bg-[var(--surface)] text-white hover:bg-[var(--bg3)]",
+                      isLoading && "opacity-50"
+                    )}
+                  >
+                    {isLoading ? "Loading..." : `Upgrade to ${plan.name}`}
+                  </button>
+                ) : (
+                  <button
+                    disabled
+                    className="w-full py-2.5 rounded-lg text-xs font-semibold bg-[var(--surface)] text-[var(--text3)]"
+                  >
+                    Current Plan
+                  </button>
+                )}
               </div>
             );
           })}
         </div>
 
-        <p className="text-center text-[11px] text-[var(--text3)] mt-6">
-          All prices exclude VAT. Cancel anytime.
-        </p>
+        {/* Enterprise */}
+        <div className="mt-6 text-center border border-[var(--border)] rounded-2xl p-5 bg-[var(--bg2)]">
+          <Zap className="w-6 h-6 text-brand mx-auto mb-2" />
+          <h3 className="text-sm font-bold mb-1">Need more than 50 users?</h3>
+          <p className="text-[11px] text-[var(--text3)] mb-3">Contact us for a custom enterprise plan.</p>
+          <a
+            href="mailto:lukasz.biniecki@hanleypepper.ie?subject=VoxSite Enterprise"
+            className="inline-block px-5 py-2 bg-brand/10 text-brand text-xs font-semibold rounded-lg"
+          >
+            Contact Us
+          </a>
+        </div>
+
+        {/* Manage subscription */}
+        <div className="mt-4 text-center">
+          <button onClick={handlePortal} className="text-xs text-[var(--text3)] underline">
+            Manage existing subscription
+          </button>
+        </div>
       </div>
+
+      <BottomNav active="projects" />
     </div>
   );
 }
