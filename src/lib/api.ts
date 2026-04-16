@@ -45,6 +45,7 @@ export interface Snag {
   priority: "low" | "medium" | "high";
   photo_url?: string;
   photo_path?: string;
+  photo_count?: number;  // 0-4, how many photos currently attached
   rectification_photo_path?: string;
   created_at: string;
   updated_at: string;
@@ -87,6 +88,51 @@ export interface Profile {
   first_name: string;
   last_name: string;
 }
+
+// ─── Plan / Billing types ─────────────────────────────────────
+export type PlanSlug = "free" | "starter" | "team" | "pro" | "business" | "enterprise";
+
+export interface PlanLimits {
+  max_users: number;
+  max_projects: number;
+  max_snags_per_month: number;
+}
+
+export interface PlanFeatures {
+  pdf_watermark: boolean;
+  email_reports: boolean;
+  company_logo: boolean;
+}
+
+export interface Plan {
+  slug: PlanSlug;
+  name: string;
+  limits: PlanLimits;
+  features: PlanFeatures;
+}
+
+export interface PlansResponse {
+  plans: Plan[];
+  max_photos_per_snag: number;
+}
+
+export interface PlanUsage {
+  plan: Plan;
+  usage: {
+    projects: number;
+    snags_this_month: number;
+    users: number;
+  };
+  limits_reached: {
+    projects: boolean;
+    snags_this_month: boolean;
+    users: boolean;
+  };
+}
+
+/** Matches the backend UNLIMITED sentinel. Keep in sync with plan_limits.py. */
+export const UNLIMITED = 999_999;
+export const isUnlimited = (n: number) => n >= UNLIMITED;
 
 // ─── Token Management ─────────────────────────────────────────
 let accessToken: string | null = null;
@@ -307,6 +353,30 @@ export const snags = {
       body: form,
     });
   },
+
+  /**
+   * Append up to 4 photos to an existing snag. Backend rejects if adding
+   * would exceed 4 photos total. Files should be pre-compressed by the
+   * caller — same expectation as snags.create().
+   */
+  addPhotos(id: string, photos: (File | Blob)[]) {
+    if (photos.length === 0 || photos.length > 4) {
+      return Promise.reject(new Error("Provide 1-4 photos"));
+    }
+    const form = new FormData();
+    const names = ["photo", "photo2", "photo3", "photo4"];
+    photos.forEach((p, i) => {
+      const name = names[i];
+      // Give Blobs a filename for FastAPI's UploadFile.filename check
+      const filename =
+        p instanceof File ? p.name : `photo-${Date.now()}-${i + 1}.jpg`;
+      form.append(name, p, filename);
+    });
+    return apiFetch<Snag>(`/snags/${id}/photos`, {
+      method: "POST",
+      body: form,
+    });
+  },
 };
 
 // ─── Transcription ────────────────────────────────────────────
@@ -349,6 +419,43 @@ export const reports = {
     a.download = `site-visit-report${visitSuffix}.pdf`;
     a.click();
     URL.revokeObjectURL(url);
+  },
+
+  /**
+   * Email a PDF report to one or more recipients. Backend picks attach-vs-link
+   * based on size (see /api/reports/{id}/email).
+   *
+   * Plan-gated: requires `email_reports` feature (Team+). A 403 from the
+   * backend is surfaced verbatim — callers should catch and show it as a
+   * paywall prompt.
+   */
+  emailReport(
+    projectId: string,
+    opts: {
+      to: string[];
+      visitId?: string;
+      weather?: string;
+      visitNo?: string;
+      message?: string;
+      includeClosed?: boolean;
+    }
+  ) {
+    return apiFetch<{
+      status: "sent";
+      mode: "attachment" | "link";
+      recipients: string[];
+      size_mb: number;
+    }>(`/reports/${projectId}/email`, {
+      method: "POST",
+      body: JSON.stringify({
+        to: opts.to,
+        visit_id: opts.visitId,
+        weather: opts.weather,
+        visit_no: opts.visitNo,
+        message: opts.message,
+        include_closed: opts.includeClosed ?? true,
+      }),
+    });
   },
 
   preview(projectId: string, visitId?: string) {
@@ -429,6 +536,32 @@ export const profiles = {
     return apiFetch<Profile>("/profiles/me", {
       method: "PUT",
       body: JSON.stringify(data),
+    });
+  },
+};
+
+// ─── Billing ──────────────────────────────────────────────────
+export const billing = {
+  /** Public — returns the full plan matrix. No auth needed. */
+  listPlans() {
+    return apiFetch<PlansResponse>("/billing/plans");
+  },
+
+  /** Returns the current user's plan, usage numbers, and which limits are hit. */
+  getMyPlan() {
+    return apiFetch<PlanUsage>("/billing/plan");
+  },
+
+  createCheckout(priceId: string) {
+    return apiFetch<{ checkout_url: string }>("/billing/checkout", {
+      method: "POST",
+      body: JSON.stringify({ price_id: priceId }),
+    });
+  },
+
+  createPortal() {
+    return apiFetch<{ portal_url: string }>("/billing/portal", {
+      method: "POST",
     });
   },
 };

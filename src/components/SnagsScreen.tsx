@@ -7,12 +7,13 @@ import { useOnlineStatus } from "@/lib/useOnlineStatus";
 import { getPendingForVisit, getPendingSnags, type PendingSnag } from "@/lib/offlineStore";
 import {
   ChevronLeft, FileText, Plus, Pencil, Trash2, Camera,
-  MapPin, Download, X, Mic, WifiOff, CloudUpload,
+  MapPin, Download, X, Mic, WifiOff, CloudUpload, Mail,
 } from "lucide-react";
 import clsx from "clsx";
 import BottomNav from "./BottomNav";
 import { useAudioRecorder } from "@/lib/useAudioRecorder";
 import { compressImage } from "@/lib/compressImage";
+import { useConfirm } from "./ConfirmDialog";
 
 const STATUS_COLORS = { open: "text-red-400 bg-red-400/10", closed: "text-green-400 bg-green-400/10" };
 const PRIORITY_COLORS = { high: "text-red-400 bg-red-400/10", medium: "text-yellow-400 bg-yellow-400/10", low: "text-gray-400 bg-gray-400/10" };
@@ -29,12 +30,23 @@ export default function SnagsScreen() {
   const [editNote, setEditNote] = useState("");
   const [editLoc, setEditLoc] = useState("");
   const [editPri, setEditPri] = useState<"low" | "medium" | "high">("medium");
+  // Newly-picked photos to attach on save, pre-compressed
+  const [editNewPhotos, setEditNewPhotos] = useState<File[]>([]);
+  const [editUploadingPhotos, setEditUploadingPhotos] = useState(false);
+  const editPhotoInputRef = useRef<HTMLInputElement>(null);
   const [downloading, setDownloading] = useState(false);
   const [weather, setWeather] = useState("");
   const [visitNo, setVisitNo] = useState("");
   const [reportTranscribing, setReportTranscribing] = useState(false);
   const [reportMicTarget, setReportMicTarget] = useState<"weather" | "visitNo" | null>(null);
   const { isRecording, secondsLeft, startRecording, stopRecording, error: micError } = useAudioRecorder();
+  const confirm = useConfirm();
+
+  // Email-report modal state
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailRecipients, setEmailRecipients] = useState("");
+  const [emailMessage, setEmailMessage] = useState("");
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   const closePhotoRef = useRef<HTMLInputElement>(null);
   const [closingSnagId, setClosingSnagId] = useState<string | null>(null);
@@ -82,10 +94,18 @@ export default function SnagsScreen() {
     }
   };
 
-  const deleteSnag = async (id: string) => {
+  const deleteSnag = async (s: typeof snags[0]) => {
+    const label = s.note.trim().slice(0, 60) || "this snag";
+    const ok = await confirm({
+      title: "Delete this snag?",
+      message: `"${label}"${s.note.trim().length > 60 ? "…" : ""} and any photos attached to it will be permanently removed. This can't be undone.`,
+      confirmLabel: "Delete snag",
+      tone: "destructive",
+    });
+    if (!ok) return;
     try {
-      await snagsApi.delete(id);
-      setSnags(snags.filter((s) => s.id !== id));
+      await snagsApi.delete(s.id);
+      setSnags(snags.filter((x) => x.id !== s.id));
       showToast("Snag deleted");
     } catch (err: any) {
       showToast(err.message);
@@ -118,12 +138,71 @@ export default function SnagsScreen() {
   const saveEdit = async () => {
     if (!editSnag) return;
     try {
+      // 1. Patch text fields first — cheap, can fail fast
       await snagsApi.update(editSnag.id, { note: editNote, location: editLoc, priority: editPri });
-      setSnags(snags.map((s) => s.id === editSnag.id ? { ...s, note: editNote, location: editLoc, priority: editPri } : s));
+
+      // 2. If the user picked any new photos, upload them. We do this AFTER
+      // the patch so a failed photo upload doesn't lose the text edits.
+      let updatedPhotoCount = editSnag.photo_count ?? 0;
+      if (editNewPhotos.length > 0) {
+        setEditUploadingPhotos(true);
+        try {
+          const updated = await snagsApi.addPhotos(editSnag.id, editNewPhotos);
+          updatedPhotoCount = updated.photo_count ?? updatedPhotoCount + editNewPhotos.length;
+        } finally {
+          setEditUploadingPhotos(false);
+        }
+      }
+
+      // 3. Reflect in local list
+      setSnags(snags.map((s) =>
+        s.id === editSnag.id
+          ? {
+              ...s,
+              note: editNote,
+              location: editLoc,
+              priority: editPri,
+              photo_count: updatedPhotoCount,
+            }
+          : s
+      ));
       setEditSnag(null);
-      showToast("Snag updated");
+      setEditNewPhotos([]);
+      if (editPhotoInputRef.current) editPhotoInputRef.current.value = "";
+      showToast(editNewPhotos.length > 0 ? "Snag updated with new photos" : "Snag updated");
     } catch (err: any) {
       showToast(err.message);
+    }
+  };
+
+  /**
+   * File picker handler for the edit-modal photo section. Compresses each
+   * selected image and appends to editNewPhotos, respecting the per-snag
+   * 4-photo cap.
+   */
+  const handleEditPhotoPick = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0 || !editSnag) return;
+    const existing = editSnag.photo_count ?? 0;
+    const remaining = 4 - existing - editNewPhotos.length;
+    if (remaining <= 0) {
+      showToast("This snag already has 4 photos");
+      return;
+    }
+    const toAdd = files.slice(0, remaining);
+    if (toAdd.length < files.length) {
+      showToast(`Only ${toAdd.length} photo(s) added — 4-photo limit`);
+    }
+    try {
+      const compressed = await Promise.all(
+        toAdd.map((f) => compressImage(f).catch(() => f))
+      );
+      setEditNewPhotos((prev) => [...prev, ...compressed]);
+    } catch {
+      showToast("Failed to prepare photos");
+    } finally {
+      // Reset the input so the same files can be re-picked if the user removes and re-adds
+      if (editPhotoInputRef.current) editPhotoInputRef.current.value = "";
     }
   };
 
@@ -141,6 +220,60 @@ export default function SnagsScreen() {
       showToast(err.message);
     } finally {
       setDownloading(false);
+    }
+  };
+
+  /**
+   * Parse a free-form text field into a list of recipient emails.
+   * Accepts commas, semicolons, whitespace, or newlines as separators.
+   */
+  const parseRecipients = (raw: string): string[] => {
+    return raw
+      .split(/[\s,;]+/)
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+  };
+
+  const handleEmailReport = async () => {
+    if (!currentProject) return;
+    const recipients = parseRecipients(emailRecipients);
+    if (recipients.length === 0) {
+      showToast("Add at least one recipient");
+      return;
+    }
+    // Very light client-side sanity check — backend does the real validation
+    const bad = recipients.find((r) => !r.includes("@") || r.length < 5);
+    if (bad) {
+      showToast(`Invalid email: ${bad}`);
+      return;
+    }
+
+    setSendingEmail(true);
+    try {
+      const res = await reportsApi.emailReport(currentProject.id, {
+        to: recipients,
+        visitId: currentVisit?.id,
+        weather,
+        visitNo: visitNo || String(currentVisit?.visit_no || ""),
+        message: emailMessage.trim() || undefined,
+      });
+
+      const countLabel = `${recipients.length} recipient${recipients.length === 1 ? "" : "s"}`;
+      const modeLabel =
+        res.mode === "link"
+          ? ` (${res.size_mb} MB — sent as download link)`
+          : ` (${res.size_mb} MB — attached)`;
+      showToast(`Report sent to ${countLabel}${modeLabel}`);
+
+      // Clear state on success
+      setShowEmailModal(false);
+      setEmailRecipients("");
+      setEmailMessage("");
+    } catch (err: any) {
+      // Backend surfaces plan-gate failures with a 403 + clear message
+      showToast(err.message || "Failed to send email");
+    } finally {
+      setSendingEmail(false);
     }
   };
 
@@ -173,9 +306,57 @@ export default function SnagsScreen() {
     setEditNote(s.note);
     setEditLoc(s.location || "");
     setEditPri(s.priority);
+    // Clear any lingering pending photos from a previous open
+    setEditNewPhotos([]);
   };
 
-  const savePhoto = async (url: string, snagNote: string) => {
+  /**
+   * Project code derivation mirrors the backend's _project_code in reports.py
+   * so the PDF and the downloaded photos share the same prefix.
+   * Examples:
+   *   "MIL06 — Basement Retrofit"  → "MIL06"
+   *   "Project Alpha"              → "PROJECT"
+   *   "" / undefined               → "PHOTO"
+   */
+  const projectCode = (projectName?: string): string => {
+    if (!projectName) return "PHOTO";
+    const first = projectName.trim().split(/\s+/)[0] || "";
+    const cleaned = first.replace(/[^A-Za-z0-9_-]/g, "").toUpperCase();
+    return (cleaned || "PHOTO").slice(0, 12);
+  };
+
+  /**
+   * Build the download filename for a snag photo.
+   * Format: ProjectCode_YYYY_MM_DD_no_NN.jpg
+   *
+   * `photoNo` is the 1-based index of this photo on the snag (1..4, plus an
+   * optional _rect suffix for the rectification/close-with-photo image).
+   */
+  const buildPhotoFilename = (
+    snagDate: string,
+    photoNo: number,
+    isRectification = false,
+  ): string => {
+    const code = projectCode(currentProject?.name);
+    const d = new Date(snagDate);
+    // Fall back to today's date if the server date is somehow unparseable.
+    const safeDate = isNaN(d.getTime()) ? new Date() : d;
+    const y = safeDate.getFullYear();
+    const m = String(safeDate.getMonth() + 1).padStart(2, "0");
+    const day = String(safeDate.getDate()).padStart(2, "0");
+    const nn = String(photoNo).padStart(2, "0");
+    const suffix = isRectification ? "_rect" : "";
+    return `${code}_${y}_${m}_${day}_no_${nn}${suffix}.jpg`;
+  };
+
+  const savePhoto = async (
+    url: string,
+    opts: {
+      snagDate: string;
+      photoNo?: number;
+      isRectification?: boolean;
+    },
+  ) => {
     try {
       showToast("Saving photo…");
       const resp = await fetch(url);
@@ -183,8 +364,11 @@ export default function SnagsScreen() {
       const blobUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = blobUrl;
-      const safeName = snagNote.slice(0, 20).replace(/[^a-zA-Z0-9]/g, "-") || "snag";
-      a.download = `voxsite-${safeName}.jpg`;
+      a.download = buildPhotoFilename(
+        opts.snagDate,
+        opts.photoNo ?? 1,
+        opts.isRectification ?? false,
+      );
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -196,7 +380,7 @@ export default function SnagsScreen() {
   };
 
   // Hide bottom nav when any modal is open
-  const modalOpen = !!editSnag || showReport;
+  const modalOpen = !!editSnag || showReport || showEmailModal;
   const visitClosed = currentVisit?.status === "closed";
 
   return (
@@ -317,7 +501,7 @@ export default function SnagsScreen() {
                   <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 group">
                     <img src={s.photo_url} alt="" className="w-full h-full object-cover" />
                     <button
-                      onClick={(e) => { e.stopPropagation(); savePhoto(s.photo_url!, s.note); }}
+                      onClick={(e) => { e.stopPropagation(); savePhoto(s.photo_url!, { snagDate: s.created_at, photoNo: 1 }); }}
                       className="absolute inset-0 bg-black/0 group-hover:bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 active:opacity-100 transition-all"
                       title="Save photo"
                     >
@@ -371,7 +555,7 @@ export default function SnagsScreen() {
                 )}
                 {s.photo_url && (
                   <button
-                    onClick={() => savePhoto(s.photo_url!, s.note)}
+                    onClick={() => savePhoto(s.photo_url!, { snagDate: s.created_at, photoNo: 1 })}
                     className="p-2 rounded-lg bg-[var(--surface)] text-[var(--text2)] hover:text-white transition-colors"
                     title="Save photo"
                   >
@@ -381,7 +565,7 @@ export default function SnagsScreen() {
                 <button onClick={() => openEdit(s)} className="p-2 rounded-lg bg-[var(--surface)] text-[var(--text2)] hover:text-white transition-colors">
                   <Pencil className="w-4 h-4" />
                 </button>
-                <button onClick={() => deleteSnag(s.id)} className="p-2 rounded-lg bg-red-400/10 text-red-400 hover:bg-red-400/20 transition-colors">
+                <button onClick={() => deleteSnag(s)} className="p-2 rounded-lg bg-red-400/10 text-red-400 hover:bg-red-400/20 transition-colors" title="Delete snag">
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
@@ -407,14 +591,24 @@ export default function SnagsScreen() {
             <div className="w-10 h-1 bg-[var(--border)] rounded-full mx-auto mb-4" />
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-bold">Snagging Report</h3>
-              <button
-                onClick={handleDownloadPdf}
-                disabled={downloading}
-                className="flex items-center gap-1.5 px-3.5 py-2 bg-brand text-white rounded-lg text-xs font-semibold"
-              >
-                <Download className="w-3.5 h-3.5" />
-                {downloading ? "Generating…" : "Download PDF"}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowEmailModal(true)}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-[var(--surface)] text-white rounded-lg text-xs font-semibold hover:bg-[var(--bg3)]"
+                  title="Email this report"
+                >
+                  <Mail className="w-3.5 h-3.5" />
+                  Email
+                </button>
+                <button
+                  onClick={handleDownloadPdf}
+                  disabled={downloading}
+                  className="flex items-center gap-1.5 px-3.5 py-2 bg-brand text-white rounded-lg text-xs font-semibold"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  {downloading ? "Generating…" : "Download PDF"}
+                </button>
+              </div>
             </div>
 
             {/* Report fields */}
@@ -552,7 +746,12 @@ export default function SnagsScreen() {
             <div className="w-10 h-1 bg-[var(--border)] rounded-full mx-auto mb-4" />
             <div className="flex justify-between items-center mb-5">
               <h3 className="text-lg font-bold">Edit Snag</h3>
-              <button onClick={() => setEditSnag(null)} className="text-[var(--text3)]"><X className="w-5 h-5" /></button>
+              <button
+                onClick={() => { setEditSnag(null); setEditNewPhotos([]); }}
+                className="text-[var(--text3)]"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
             <div className="space-y-3 mb-5">
               <div>
@@ -589,9 +788,195 @@ export default function SnagsScreen() {
                 </div>
               </div>
             </div>
-            <button onClick={saveEdit} className="w-full h-12 bg-brand hover:bg-brand-light text-white font-semibold rounded-lg transition-all">
-              Save Changes
+
+            {/* Photos */}
+            {(() => {
+              const existing = editSnag?.photo_count ?? 0;
+              const pending = editNewPhotos.length;
+              const total = existing + pending;
+              const remaining = Math.max(0, 4 - total);
+              return (
+                <div className="mb-5">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider">
+                      Photos
+                    </label>
+                    <span className="text-[10px] text-[var(--text3)]">
+                      {total} of 4
+                      {pending > 0 && ` (${pending} new)`}
+                    </span>
+                  </div>
+
+                  {/* Pending-photo thumbnails */}
+                  {pending > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {editNewPhotos.map((f, i) => {
+                        const url = URL.createObjectURL(f);
+                        return (
+                          <div
+                            key={`${f.name}-${i}`}
+                            className="relative w-16 h-16 rounded-lg overflow-hidden border border-[var(--border)]"
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={url} alt="" className="w-full h-full object-cover" />
+                            <button
+                              onClick={() => {
+                                setEditNewPhotos((prev) => prev.filter((_, idx) => idx !== i));
+                                URL.revokeObjectURL(url);
+                              }}
+                              className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center"
+                              aria-label="Remove photo"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Add-more picker */}
+                  {remaining > 0 ? (
+                    <>
+                      <input
+                        ref={editPhotoInputRef}
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleEditPhotoPick}
+                        className="hidden"
+                        id="edit-photo-input"
+                      />
+                      <label
+                        htmlFor="edit-photo-input"
+                        className="flex items-center justify-center gap-2 w-full h-11 border border-dashed border-[var(--border)] rounded-lg text-xs font-semibold text-[var(--text2)] hover:text-white hover:border-brand transition-colors cursor-pointer"
+                      >
+                        <Camera className="w-4 h-4" />
+                        Add photo{remaining > 1 ? "s" : ""} ({remaining} more allowed)
+                      </label>
+                    </>
+                  ) : (
+                    <p className="text-[11px] text-[var(--text3)] italic">
+                      This snag has the maximum of 4 photos.
+                    </p>
+                  )}
+                </div>
+              );
+            })()}
+
+            <button
+              onClick={saveEdit}
+              disabled={editUploadingPhotos}
+              className="w-full h-12 bg-brand hover:bg-brand-light text-white font-semibold rounded-lg transition-all disabled:opacity-50"
+            >
+              {editUploadingPhotos ? "Uploading photos…" : "Save Changes"}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Email Report Modal */}
+      {showEmailModal && (
+        <div
+          className="fixed inset-0 bg-black/70 z-[60] flex items-end justify-center animate-fade-in"
+          onClick={() => !sendingEmail && setShowEmailModal(false)}
+        >
+          <div
+            className="w-full max-w-[480px] max-h-[85vh] bg-[var(--bg2)] rounded-t-2xl p-5 overflow-y-auto animate-slide-up"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 bg-[var(--border)] rounded-full mx-auto mb-4" />
+
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold flex items-center gap-2">
+                <Mail className="w-4 h-4 text-brand" />
+                Email Report
+              </h3>
+              <button
+                onClick={() => setShowEmailModal(false)}
+                disabled={sendingEmail}
+                className="p-1.5 rounded-full hover:bg-[var(--bg3)] text-[var(--text2)] disabled:opacity-50"
+                aria-label="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-[12px] text-[var(--text3)] mb-4">
+              Send the PDF report for{" "}
+              <span className="text-white font-semibold">
+                {currentProject?.name}
+              </span>
+              {currentVisit && ` · Visit ${currentVisit.visit_no}`}
+              .
+            </p>
+
+            {/* Recipients */}
+            <div className="mb-3">
+              <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">
+                Recipients
+              </label>
+              <textarea
+                value={emailRecipients}
+                onChange={(e) => setEmailRecipients(e.target.value)}
+                placeholder="email@example.com, another@example.com"
+                rows={2}
+                disabled={sendingEmail}
+                className="w-full px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors resize-none"
+              />
+              <p className="text-[10px] text-[var(--text3)] mt-1">
+                Separate multiple addresses with commas, spaces, or new lines. Up to 10 recipients.
+              </p>
+            </div>
+
+            {/* Optional message */}
+            <div className="mb-4">
+              <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">
+                Message <span className="text-[var(--text3)] normal-case font-normal">(optional)</span>
+              </label>
+              <textarea
+                value={emailMessage}
+                onChange={(e) => setEmailMessage(e.target.value)}
+                placeholder="Add a short note for the recipient…"
+                rows={3}
+                maxLength={2000}
+                disabled={sendingEmail}
+                className="w-full px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors resize-none"
+              />
+            </div>
+
+            {/* Info note about size handling */}
+            <div className="mb-4 p-3 bg-[var(--bg)] border border-[var(--border)] rounded-lg">
+              <p className="text-[11px] text-[var(--text2)] leading-relaxed">
+                <span className="font-semibold">Heads-up:</span> reports under
+                10&nbsp;MB are attached directly. Larger reports are uploaded
+                and shared as a time-limited download link valid for 7 days.
+              </p>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowEmailModal(false)}
+                disabled={sendingEmail}
+                className="flex-1 h-11 bg-[var(--surface)] hover:bg-[var(--bg3)] text-white font-semibold rounded-lg transition-all disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleEmailReport}
+                disabled={sendingEmail || !emailRecipients.trim()}
+                className="flex-1 h-11 bg-brand hover:bg-brand-light text-white font-semibold rounded-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {sendingEmail ? (
+                  "Sending…"
+                ) : (
+                  <>
+                    <Mail className="w-4 h-4" />
+                    Send
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

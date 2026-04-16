@@ -9,12 +9,14 @@ import {
 } from "lucide-react";
 import clsx from "clsx";
 import BottomNav from "./BottomNav";
+import { useConfirm } from "./ConfirmDialog";
 
 export default function SiteVisitsScreen() {
   const {
     currentProject, setScreen, visits, setVisits,
     setCurrentVisit, showToast, loading, setLoading,
   } = useStore();
+  const confirm = useConfirm();
 
   const DEFAULT_CLOSING = "If requested, notice must be given to allow for a site visit to review prior to closing up or concealing the item of works.\n\nThe contractor is to confirm that the above actions have been carried out and provide photographic record of the associated works. The contractor is to sign the items as closed and e-mail to originator.";
 
@@ -143,10 +145,17 @@ export default function SiteVisitsScreen() {
     }
   };
 
-  const deleteVisit = async (id: string) => {
+  const deleteVisit = async (v: typeof visits[0]) => {
+    const ok = await confirm({
+      title: `Delete Visit ${v.visit_no}?`,
+      message: "This will permanently remove the site visit and all snags recorded on it. This can't be undone.",
+      confirmLabel: "Delete visit",
+      tone: "destructive",
+    });
+    if (!ok) return;
     try {
-      await visitsApi.delete(id);
-      setVisits(visits.filter((v) => v.id !== id));
+      await visitsApi.delete(v.id);
+      setVisits(visits.filter((x) => x.id !== v.id));
       showToast("Visit deleted");
     } catch (err: any) {
       showToast(err.message);
@@ -273,7 +282,7 @@ export default function SiteVisitsScreen() {
                   </>
                 )}
                 <button
-                  onClick={() => deleteVisit(v.id)}
+                  onClick={() => deleteVisit(v)}
                   className="p-2 rounded-lg bg-red-400/10 text-red-400 hover:bg-red-400/20 transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />

@@ -5,7 +5,10 @@ import { WifiOff, RefreshCw, CloudUpload } from "lucide-react";
 import clsx from "clsx";
 
 export default function OfflineBanner() {
-  const { isOnline, pendingCount, syncing, syncAll } = useSyncQueue();
+  // Note: `manualSync` resets the 3-strike retry cap before syncing, so the
+  // button works even for items that auto-sync has given up on. `syncAll`
+  // (used by the auto-sync effect) respects the cap.
+  const { isOnline, pendingCount, syncing, manualSync } = useSyncQueue();
 
   // Nothing to show when online and no pending items
   if (isOnline && pendingCount === 0) return null;
@@ -39,7 +42,7 @@ export default function OfflineBanner() {
           <CloudUpload className="w-4 h-4 flex-shrink-0" />
           <span className="flex-1">{pendingCount} snag{pendingCount !== 1 ? "s" : ""} waiting to sync</span>
           <button
-            onClick={syncAll}
+            onClick={manualSync}
             className="px-2 py-1 bg-black/20 rounded text-[10px] font-bold uppercase"
           >
             Sync now

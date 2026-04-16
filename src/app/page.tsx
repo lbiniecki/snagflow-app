@@ -11,6 +11,7 @@ import PricingScreen from "@/components/PricingScreen";
 import SettingsScreen from "@/components/SettingsScreen";
 import OfflineBanner from "@/components/OfflineBanner";
 import Toast from "@/components/Toast";
+import { ConfirmProvider } from "@/components/ConfirmDialog";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
@@ -63,7 +64,7 @@ export default function Home() {
   }, [setAuth, setScreen, showToast]);
 
   return (
-    <>
+    <ConfirmProvider>
       {screen !== "login" && <OfflineBanner />}
       {screen === "login" && <LoginScreen />}
       {screen === "projects" && <ProjectsScreen />}
@@ -73,6 +74,6 @@ export default function Home() {
       {screen === "pricing" && <PricingScreen />}
       {screen === "settings" && <SettingsScreen />}
       {toast && <Toast message={toast} />}
-    </>
+    </ConfirmProvider>
   );
 }

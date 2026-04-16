@@ -9,6 +9,7 @@ import {
   Clock, Mail,
 } from "lucide-react";
 import BottomNav from "./BottomNav";
+import { useConfirm } from "./ConfirmDialog";
 
 // Pending invite type (from the new /pending-invites endpoint)
 interface PendingInvite {
@@ -22,6 +23,7 @@ interface PendingInvite {
 
 export default function SettingsScreen() {
   const { setScreen, showToast, user } = useStore();
+  const confirm = useConfirm();
 
   const [company, setCompany] = useState<Company | null>(null);
   const [members, setMembers] = useState<CompanyMember[]>([]);
@@ -150,6 +152,13 @@ export default function SettingsScreen() {
   };
 
   const handleDeleteLogo = async () => {
+    const ok = await confirm({
+      title: "Remove company logo?",
+      message: "Your logo will no longer appear on PDF reports. You can upload a new one anytime.",
+      confirmLabel: "Remove logo",
+      tone: "destructive",
+    });
+    if (!ok) return;
     try {
       await companies.deleteLogo();
       setCompany(company ? { ...company, logo_path: undefined } : null);
@@ -209,10 +218,18 @@ export default function SettingsScreen() {
     }
   };
 
-  const handleRemoveMember = async (memberId: string) => {
+  const handleRemoveMember = async (m: CompanyMember) => {
+    const name = getMemberDisplay(m);
+    const ok = await confirm({
+      title: "Remove team member?",
+      message: `${name} will lose access to this company's projects immediately. They'll keep their own account and can be re-invited later if needed.`,
+      confirmLabel: "Remove",
+      tone: "destructive",
+    });
+    if (!ok) return;
     try {
-      await companies.removeMember(memberId);
-      setMembers(members.filter((m) => m.id !== memberId));
+      await companies.removeMember(m.id);
+      setMembers(members.filter((x) => x.id !== m.id));
       const c = await companies.getMyCompany();
       setCompany(c);
       showToast("Member removed");
@@ -222,15 +239,22 @@ export default function SettingsScreen() {
   };
 
   // ── NEW: revoke a pending invite ──
-  const handleRevokeInvite = async (inviteId: string) => {
+  const handleRevokeInvite = async (inv: PendingInvite) => {
+    const ok = await confirm({
+      title: "Revoke this invite?",
+      message: `The invitation for ${inv.email} will be cancelled. If they haven't accepted yet, they won't be able to — you can send a new invite later if you change your mind.`,
+      confirmLabel: "Revoke invite",
+      tone: "destructive",
+    });
+    if (!ok) return;
     try {
       const token = localStorage.getItem("voxsite_token");
-      const res = await fetch(`${API}/companies/invites/${inviteId}`, {
+      const res = await fetch(`${API}/companies/invites/${inv.id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
-        setPendingInvites(pendingInvites.filter((i) => i.id !== inviteId));
+        setPendingInvites(pendingInvites.filter((i) => i.id !== inv.id));
         const c = await companies.getMyCompany();
         setCompany(c);
         showToast("Invite revoked");
@@ -461,7 +485,7 @@ export default function SettingsScreen() {
                       {/* Only owner can remove, and can't remove self */}
                       {company.is_owner && !isMe && (
                         <button
-                          onClick={() => handleRemoveMember(m.id)}
+                          onClick={() => handleRemoveMember(m)}
                           className="p-1.5 rounded-lg bg-red-400/10 text-red-400 hover:bg-red-400/20 transition-colors"
                         >
                           <X className="w-3.5 h-3.5" />
@@ -488,7 +512,7 @@ export default function SettingsScreen() {
                         </div>
                         {company.is_owner && (
                           <button
-                            onClick={() => handleRevokeInvite(inv.id)}
+                            onClick={() => handleRevokeInvite(inv)}
                             className="p-1.5 rounded-lg bg-red-400/10 text-red-400 hover:bg-red-400/20 transition-colors"
                             title="Revoke invite"
                           >
