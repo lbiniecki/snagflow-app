@@ -337,7 +337,7 @@ export default function CaptureScreen() {
         {/* Submit */}
         <button
           onClick={handleSubmit}
-          disabled={saving || !note.trim()}
+          disabled={saving}
           className="w-full h-[52px] bg-brand hover:bg-brand-light text-white text-base font-semibold rounded-xl transition-all disabled:opacity-50 animate-slide-up delay-200"
         >
           {saving ? "Saving…" : !isOnline ? "Save Offline" : "Save Snag"}
