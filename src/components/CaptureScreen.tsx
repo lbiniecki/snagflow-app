@@ -181,7 +181,7 @@ export default function CaptureScreen() {
         <button onClick={() => setScreen("snags")} className="p-2 rounded-full hover:bg-[var(--bg3)] text-[var(--text2)]">
           <ChevronLeft className="w-5 h-5" />
         </button>
-        <h2 className="text-base font-semibold flex-1 text-center">New Snag</h2>
+        <h2 className="text-base font-semibold flex-1 text-center">New Item</h2>
         {!isOnline && (
           <span className="flex items-center gap-1 text-[10px] text-red-400 font-semibold">
             <WifiOff className="w-3.5 h-3.5" /> Offline
@@ -194,7 +194,7 @@ export default function CaptureScreen() {
         {/* Offline notice */}
         {!isOnline && (
           <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 mb-4 text-center">
-            <p className="text-xs text-red-400 font-semibold">No connection — snag will be saved locally and synced later</p>
+            <p className="text-xs text-red-400 font-semibold">No connection — item will be saved locally and synced later</p>
           </div>
         )}
 

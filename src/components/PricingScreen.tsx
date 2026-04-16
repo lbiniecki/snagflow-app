@@ -62,7 +62,7 @@ const PLANS = [
 const LIMIT_ROWS: LimitRow[] = [
   { label: "Users",        values: [1, 3, 10, 25, 50] },
   { label: "Projects",     values: [2, 5, 15, "Unlimited", "Unlimited"] },
-  { label: "Snags / month", values: [20, 100, 500, "Unlimited", "Unlimited"] },
+  { label: "Items / month", values: [20, 100, 500, "Unlimited", "Unlimited"] },
   { label: "Photos / item", values: [4, 4, 4, 4, 4] },
 ];
 

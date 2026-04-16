@@ -713,7 +713,7 @@ export default function SnagsScreen() {
             <div className="bg-white text-gray-900 rounded-xl p-5 text-[11px] leading-relaxed">
               <div className="flex justify-between items-start pb-3 mb-4 border-b-[3px] border-brand">
                 <div>
-                  <h1 className="text-base font-bold text-brand">SNAGGING REPORT</h1>
+                  <h1 className="text-base font-bold text-brand">INSPECTION REPORT</h1>
                   <p className="text-xs text-gray-600">{currentProject?.name}</p>
                   <p className="text-[10px] text-gray-400">Client: {currentProject?.client || "—"}</p>
                 </div>
@@ -741,7 +741,7 @@ export default function SnagsScreen() {
 
               {/* Snag table */}
               <h2 className="text-xs font-bold text-brand uppercase tracking-wider mb-2 pb-1 border-b border-gray-200">
-                Open Snags ({openCount})
+                Open Items ({openCount})
               </h2>
               {openCount > 0 ? (
                 <table className="w-full text-[10px] border-collapse">
@@ -771,7 +771,7 @@ export default function SnagsScreen() {
                   </tbody>
                 </table>
               ) : (
-                <p className="text-gray-400 italic text-[10px] py-2">All snags resolved!</p>
+                <p className="text-gray-400 italic text-[10px] py-2">All items resolved!</p>
               )}
             </div>
           </div>
@@ -784,7 +784,7 @@ export default function SnagsScreen() {
           <div className="w-full max-w-[480px] bg-[var(--bg2)] rounded-t-2xl p-5 animate-slide-up">
             <div className="w-10 h-1 bg-[var(--border)] rounded-full mx-auto mb-4" />
             <div className="flex justify-between items-center mb-5">
-              <h3 className="text-lg font-bold">Edit Snag</h3>
+              <h3 className="text-lg font-bold">Edit Item</h3>
               <button
                 onClick={() => { setEditSnag(null); setEditNewPhotos([]); }}
                 className="text-[var(--text3)]"

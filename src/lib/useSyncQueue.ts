@@ -113,7 +113,7 @@ export function useSyncQueue() {
       // If everything left is in the skipped pile, surface that so the user
       // knows why "pending" isn't going down.
       if (synced === 0 && failed === 0 && skipped > 0) {
-        showToast(`${skipped} snag${skipped > 1 ? "s" : ""} stuck — tap Sync now to retry`);
+        showToast(`${skipped} item${skipped > 1 ? "s" : ""} stuck — tap Sync now to retry`);
       }
     } finally {
       syncingRef.current = false;

@@ -148,7 +148,7 @@ export default function SiteVisitsScreen() {
   const deleteVisit = async (v: typeof visits[0]) => {
     const ok = await confirm({
       title: `Delete Visit ${v.visit_no}?`,
-      message: "This will permanently remove the site visit and all snags recorded on it. This can't be undone.",
+      message: "This will permanently remove the site visit and all items recorded on it. This can't be undone.",
       confirmLabel: "Delete visit",
       tone: "destructive",
     });

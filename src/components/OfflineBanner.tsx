@@ -28,7 +28,7 @@ export default function OfflineBanner() {
         <>
           <WifiOff className="w-4 h-4 flex-shrink-0" />
           <span className="flex-1">
-            Offline — snags saved locally
+            Offline — items saved locally
             {pendingCount > 0 && ` (${pendingCount} pending)`}
           </span>
         </>

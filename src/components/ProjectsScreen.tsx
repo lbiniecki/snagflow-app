@@ -108,7 +108,7 @@ export default function ProjectsScreen() {
           </div>
           <div className="bg-[var(--bg2)] border border-[var(--border)] rounded-xl p-3.5 text-center">
             <div className="text-2xl font-bold font-mono text-red-400">{totalOpen}</div>
-            <div className="text-[10px] text-[var(--text3)] uppercase tracking-wider mt-1">Total Snags</div>
+            <div className="text-[10px] text-[var(--text3)] uppercase tracking-wider mt-1">Total Items</div>
           </div>
           <div className="bg-[var(--bg2)] border border-[var(--border)] rounded-xl p-3.5 text-center">
             <div className="text-2xl font-bold font-mono text-green-400">0</div>
@@ -139,7 +139,7 @@ export default function ProjectsScreen() {
                 </div>
                 {p.snag_count > 0 && (
                   <span className="text-[11px] font-semibold text-red-400 bg-red-400/10 px-2.5 py-0.5 rounded-full">
-                    {p.snag_count} snags
+                    {p.snag_count} items
                   </span>
                 )}
               </div>
