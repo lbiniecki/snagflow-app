@@ -15,6 +15,14 @@ interface AppState {
   screen: "login" | "projects" | "visits" | "snags" | "capture" | "pricing" | "settings";
   setScreen: (screen: AppState["screen"]) => void;
 
+  // Company-ownership flag — set after fetching the user's company (in
+  // ProjectsScreen / SettingsScreen). `null` while unknown, `true` if the
+  // user owns their current company, `false` if they're a regular member.
+  // Non-owners should not see Pricing/billing UI — only owners manage
+  // subscriptions.
+  isCompanyOwner: boolean | null;
+  setIsCompanyOwner: (v: boolean | null) => void;
+
   // Projects
   projects: Project[];
   currentProject: Project | null;
@@ -47,12 +55,16 @@ export const useStore = create<AppState>((set) => ({
   setAuth: (user, token) => set({ user, token }),
   logout: () => {
     localStorage.removeItem("voxsite_token");
-    set({ user: null, token: null, screen: "login" });
+    set({ user: null, token: null, screen: "login", isCompanyOwner: null });
   },
 
   // Navigation
   screen: "login",
   setScreen: (screen) => set({ screen }),
+
+  // Company ownership
+  isCompanyOwner: null,
+  setIsCompanyOwner: (v) => set({ isCompanyOwner: v }),
 
   // Projects
   projects: [],

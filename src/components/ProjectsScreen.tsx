@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useStore } from "@/lib/store";
-import { projects as projectsApi } from "@/lib/api";
+import { projects as projectsApi, companies as companiesApi } from "@/lib/api";
 import { LogOut, Plus, X, Sparkles } from "lucide-react";
 import BottomNav from "./BottomNav";
 
@@ -10,6 +10,7 @@ export default function ProjectsScreen() {
   const {
     user, logout, projects, setProjects, setCurrentProject,
     setScreen, showToast, loading, setLoading,
+    isCompanyOwner, setIsCompanyOwner,
   } = useStore();
 
   const [showModal, setShowModal] = useState(false);
@@ -32,6 +33,26 @@ export default function ProjectsScreen() {
     }
     load();
   }, [setProjects, setLoading]);
+
+  // Populate ownership flag once per session — cheap lookup, one API call.
+  // This is the root screen users land on after login, so doing it here means
+  // downstream screens can rely on the flag being set. If the user has no
+  // company yet (new signup), we treat them as "owner" since they'll be the
+  // one creating the company.
+  useEffect(() => {
+    if (isCompanyOwner !== null) return; // already resolved
+    (async () => {
+      try {
+        const company = await companiesApi.getMyCompany();
+        setIsCompanyOwner(company ? !!company.is_owner : true);
+      } catch {
+        // Non-fatal — leave null. Screens that check will show the sensible
+        // default (e.g. Upgrade pill visible), which matches the pre-fix
+        // behaviour so nothing is worse than before.
+        setIsCompanyOwner(null);
+      }
+    })();
+  }, [isCompanyOwner, setIsCompanyOwner]);
 
   const handleCreate = async () => {
     if (!name.trim()) return;
@@ -64,9 +85,13 @@ export default function ProjectsScreen() {
           <p className="text-xs text-[var(--text3)]">Welcome back{user?.email ? `, ${user.email.split("@")[0]}` : ""}</p>
         </div>
         <div className="flex items-center gap-1">
-          <button onClick={() => setScreen("pricing")} className="px-3 py-1.5 rounded-full bg-brand/10 text-brand text-[11px] font-semibold hover:bg-brand/20 transition-colors flex items-center gap-1">
-            <Sparkles className="w-3.5 h-3.5" /> Upgrade
-          </button>
+          {/* Owner-only: upgrade pill. Hidden for regular members — they
+              can't change billing anyway, and the pill is confusing noise. */}
+          {isCompanyOwner !== false && (
+            <button onClick={() => setScreen("pricing")} className="px-3 py-1.5 rounded-full bg-brand/10 text-brand text-[11px] font-semibold hover:bg-brand/20 transition-colors flex items-center gap-1">
+              <Sparkles className="w-3.5 h-3.5" /> Upgrade
+            </button>
+          )}
           <button onClick={logout} className="p-2.5 rounded-full hover:bg-[var(--bg3)] transition-colors text-[var(--text2)]">
             <LogOut className="w-5 h-5" />
           </button>
@@ -136,8 +161,22 @@ export default function ProjectsScreen() {
 
       {/* Create modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-end justify-center animate-fade-in" onClick={() => setShowModal(false)}>
-          <div className="w-full max-w-[480px] bg-[var(--bg2)] rounded-t-2xl p-5 animate-slide-up" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 bg-black/70 z-50 flex items-end justify-center animate-fade-in"
+          onClick={() => setShowModal(false)}
+          // `dvh` (dynamic viewport height) shrinks when the mobile keyboard
+          // comes up, so `items-end` sits the modal just above the keyboard
+          // instead of off-screen. Old-browser fallback is `100vh`.
+          style={{ height: "100vh", maxHeight: "100dvh" }}
+        >
+          <div
+            className="w-full max-w-[480px] bg-[var(--bg2)] rounded-t-2xl p-5 animate-slide-up overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+            // Cap the sheet at ~90% of viewport so it always fits even with
+            // keyboard up, and let content inside scroll if we ever add more
+            // fields.
+            style={{ maxHeight: "90dvh" }}
+          >
             <div className="w-10 h-1 bg-[var(--border)] rounded-full mx-auto mb-4" />
             <div className="flex justify-between items-center mb-5">
               <h3 className="text-lg font-bold">New Project</h3>
@@ -148,18 +187,35 @@ export default function ProjectsScreen() {
               <div>
                 <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">Project Name</label>
                 <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Riverside Apartments – Block B" autoFocus
+                  // Scroll the focused field into view on keyboard pop. Works
+                  // on iOS Safari/Chrome and Android Chrome — those browsers
+                  // fire focus before showing the keyboard, then resize;
+                  // the setTimeout waits for the resize to settle before
+                  // scrolling so the final resting position is accurate.
+                  onFocus={(e) => {
+                    const el = e.currentTarget;
+                    setTimeout(() => el.scrollIntoView({ block: "center", behavior: "smooth" }), 300);
+                  }}
                   className="w-full px-3.5 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
                 />
               </div>
               <div>
                 <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">Client</label>
                 <input value={client} onChange={(e) => setClient(e.target.value)} placeholder="e.g. Horizon Developments"
+                  onFocus={(e) => {
+                    const el = e.currentTarget;
+                    setTimeout(() => el.scrollIntoView({ block: "center", behavior: "smooth" }), 300);
+                  }}
                   className="w-full px-3.5 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
                 />
               </div>
               <div>
                 <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">Site Address</label>
                 <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="e.g. 42 River Road, Dublin"
+                  onFocus={(e) => {
+                    const el = e.currentTarget;
+                    setTimeout(() => el.scrollIntoView({ block: "center", behavior: "smooth" }), 300);
+                  }}
                   className="w-full px-3.5 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
                 />
               </div>

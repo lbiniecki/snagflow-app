@@ -16,7 +16,18 @@ import { ConfirmProvider } from "@/components/ConfirmDialog";
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 export default function Home() {
-  const { screen, setScreen, setAuth, showToast, toast } = useStore();
+  const { screen, setScreen, setAuth, showToast, toast, isCompanyOwner } = useStore();
+
+  // Guard: non-owners can't view Pricing. If someone triggers the screen
+  // (e.g. via an older link or stale state), bounce back to Projects.
+  // We explicitly check `=== false`: a null flag (pre-load or API failure)
+  // does NOT trigger the redirect, so the screen still works for the owner
+  // during the brief moment before the flag resolves.
+  useEffect(() => {
+    if (screen === "pricing" && isCompanyOwner === false) {
+      setScreen("projects");
+    }
+  }, [screen, isCompanyOwner, setScreen]);
 
   // Restore session on mount
   useEffect(() => {
@@ -71,7 +82,7 @@ export default function Home() {
       {screen === "visits" && <SiteVisitsScreen />}
       {screen === "snags" && <SnagsScreen />}
       {screen === "capture" && <CaptureScreen />}
-      {screen === "pricing" && <PricingScreen />}
+      {screen === "pricing" && isCompanyOwner !== false && <PricingScreen />}
       {screen === "settings" && <SettingsScreen />}
       {toast && <Toast message={toast} />}
     </ConfirmProvider>

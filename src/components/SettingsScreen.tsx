@@ -22,10 +22,17 @@ interface PendingInvite {
 }
 
 export default function SettingsScreen() {
-  const { setScreen, showToast, user } = useStore();
+  const { setScreen, showToast, user, setIsCompanyOwner } = useStore();
   const confirm = useConfirm();
 
-  const [company, setCompany] = useState<Company | null>(null);
+  const [company, setCompanyRaw] = useState<Company | null>(null);
+  // Wrapper that also syncs the global isCompanyOwner flag. Every place in
+  // this file uses `setCompany` — centralising the sync here means we don't
+  // have to remember to add setIsCompanyOwner at six different call sites.
+  const setCompany = (c: Company | null) => {
+    setCompanyRaw(c);
+    setIsCompanyOwner(c ? !!c.is_owner : true);
+  };
   const [members, setMembers] = useState<CompanyMember[]>([]);
   const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
   const [companyName, setCompanyName] = useState("");
@@ -443,14 +450,18 @@ export default function SettingsScreen() {
                       </div>
                       <p className="text-sm text-white font-semibold mb-1">Company logo is a Starter feature</p>
                       <p className="text-[12px] text-[var(--text3)] mb-3 px-4 leading-relaxed">
-                        Add your logo to PDF reports and remove the VoxSite watermark by upgrading.
+                        {company.is_owner
+                          ? "Add your logo to PDF reports and remove the VoxSite watermark by upgrading."
+                          : "Once your company owner upgrades, your logo will appear on PDF reports automatically."}
                       </p>
-                      <button
-                        onClick={() => setScreen("pricing")}
-                        className="px-4 py-2 bg-brand hover:bg-brand-light text-white text-xs font-semibold rounded-lg transition-colors"
-                      >
-                        See plans
-                      </button>
+                      {company.is_owner && (
+                        <button
+                          onClick={() => setScreen("pricing")}
+                          className="px-4 py-2 bg-brand hover:bg-brand-light text-white text-xs font-semibold rounded-lg transition-colors"
+                        >
+                          See plans
+                        </button>
+                      )}
                     </div>
                   )
                 ) : company.logo_path ? (
