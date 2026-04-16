@@ -228,14 +228,19 @@ export default function SnagsScreen() {
    */
   const handleDeleteExistingPhoto = async (slot: number) => {
     if (!editSnag || editDeletingSlot !== null) return;
+
+    const ok = await confirm({
+      title: "Remove this photo?",
+      message: "The photo will be permanently deleted from this item. You can always add a new one.",
+      confirmLabel: "Remove photo",
+      tone: "destructive",
+    });
+    if (!ok) return;
+
     setEditDeletingSlot(slot);
     try {
       const updated = await snagsApi.deletePhoto(editSnag.id, slot);
-      // Patch the editSnag reference so the modal reflects the new photo_urls
-      // state without needing to re-open.
       setEditSnag(updated);
-      // Also update the broader snag list so the thumbnail outside the modal
-      // is in sync when the modal closes.
       setSnags(snags.map((s) => s.id === updated.id ? updated : s));
       showToast("Photo removed");
     } catch (err: any) {
