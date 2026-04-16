@@ -414,7 +414,47 @@ export default function SettingsScreen() {
                 <Image className="w-4 h-4" /> Company Logo
               </h3>
               <div className="bg-[var(--bg2)] border border-[var(--border)] rounded-xl p-4">
-                {company.logo_path ? (
+                {company.plan === "free" ? (
+                  /* ── Free plan: logo is a paid feature ── */
+                  company.logo_path ? (
+                    // Already has a logo (uploaded before downgrade, or legacy).
+                    // Show it, but be clear it won't appear on reports until upgrade.
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 bg-white rounded-lg flex items-center justify-center overflow-hidden opacity-60">
+                        <span className="text-[10px] text-gray-400">Logo</span>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm text-yellow-400 font-semibold">Logo uploaded but hidden</p>
+                        <p className="text-[11px] text-[var(--text3)]">Upgrade to Starter or higher to show your logo on PDF reports.</p>
+                      </div>
+                      <button
+                        onClick={handleDeleteLogo}
+                        className="p-2 rounded-lg bg-red-400/10 text-red-400 hover:bg-red-400/20 transition-colors"
+                        title="Remove logo"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    // No logo, show upgrade prompt instead of upload button
+                    <div className="text-center py-6">
+                      <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-brand/15 text-brand mb-3">
+                        <Image className="w-5 h-5" />
+                      </div>
+                      <p className="text-sm text-white font-semibold mb-1">Company logo is a Starter feature</p>
+                      <p className="text-[12px] text-[var(--text3)] mb-3 px-4 leading-relaxed">
+                        Add your logo to PDF reports and remove the VoxSite watermark by upgrading.
+                      </p>
+                      <button
+                        onClick={() => setScreen("pricing")}
+                        className="px-4 py-2 bg-brand hover:bg-brand-light text-white text-xs font-semibold rounded-lg transition-colors"
+                      >
+                        See plans
+                      </button>
+                    </div>
+                  )
+                ) : company.logo_path ? (
+                  /* ── Paid plan, logo uploaded ── */
                   <div className="flex items-center gap-4">
                     <div className="w-16 h-16 bg-white rounded-lg flex items-center justify-center overflow-hidden">
                       <span className="text-[10px] text-gray-400">Logo</span>
@@ -441,6 +481,7 @@ export default function SettingsScreen() {
                     </div>
                   </div>
                 ) : (
+                  /* ── Paid plan, no logo yet ── */
                   <button
                     onClick={() => logoInputRef.current?.click()}
                     className="w-full py-8 border-2 border-dashed border-[var(--border)] rounded-xl text-center hover:border-brand transition-colors group"

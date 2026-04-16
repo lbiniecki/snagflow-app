@@ -45,6 +45,8 @@ export interface Snag {
   priority: "low" | "medium" | "high";
   photo_url?: string;
   photo_path?: string;
+  /** 4-element list, slot-ordered. null = empty slot. Populated by backend _row_to_snag. */
+  photo_urls?: (string | null)[];
   photo_count?: number;  // 0-4, how many photos currently attached
   rectification_photo_path?: string;
   created_at: string;
@@ -375,6 +377,20 @@ export const snags = {
     return apiFetch<Snag>(`/snags/${id}/photos`, {
       method: "POST",
       body: form,
+    });
+  },
+
+  /**
+   * Remove a single photo from a snag by slot number (1..4, 1-based).
+   * Backend clears the corresponding column and deletes the file from
+   * Storage. No-op (returns current state) if the slot is already empty.
+   */
+  deletePhoto(id: string, slot: number) {
+    if (slot < 1 || slot > 4) {
+      return Promise.reject(new Error("slot must be between 1 and 4"));
+    }
+    return apiFetch<Snag>(`/snags/${id}/photos/${slot}`, {
+      method: "DELETE",
     });
   },
 };

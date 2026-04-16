@@ -100,7 +100,16 @@ export default function CaptureScreen() {
   };
 
   const handleSubmit = async () => {
-    if (!note.trim() || !currentProject) return;
+    if (!currentProject) {
+      showToast("No project selected");
+      return;
+    }
+    // Polite validation — previously we early-returned silently, which made
+    // the Save button feel broken when the user forgot to fill in a description.
+    if (!note.trim()) {
+      showToast("Please add a description before saving this snag.");
+      return;
+    }
     setSaving(true);
 
     // Check connectivity directly (hook state can lag)

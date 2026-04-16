@@ -33,6 +33,9 @@ export default function SnagsScreen() {
   // Newly-picked photos to attach on save, pre-compressed
   const [editNewPhotos, setEditNewPhotos] = useState<File[]>([]);
   const [editUploadingPhotos, setEditUploadingPhotos] = useState(false);
+  // When a slot number is here, that slot's X is showing a loading indicator
+  // and its delete request is in flight. Used only for UI feedback.
+  const [editDeletingSlot, setEditDeletingSlot] = useState<number | null>(null);
   const editPhotoInputRef = useRef<HTMLInputElement>(null);
   const [downloading, setDownloading] = useState(false);
   const [weather, setWeather] = useState("");
@@ -141,31 +144,32 @@ export default function SnagsScreen() {
       // 1. Patch text fields first — cheap, can fail fast
       await snagsApi.update(editSnag.id, { note: editNote, location: editLoc, priority: editPri });
 
-      // 2. If the user picked any new photos, upload them. We do this AFTER
-      // the patch so a failed photo upload doesn't lose the text edits.
-      let updatedPhotoCount = editSnag.photo_count ?? 0;
+      // 2. If the user staged new photos, upload them. We do this AFTER the
+      // text patch so a failed photo upload doesn't lose the text edits.
+      // The response carries the updated photo_count AND photo_urls, so we
+      // use it to keep the list row in sync.
+      let serverSnag = editSnag;
       if (editNewPhotos.length > 0) {
         setEditUploadingPhotos(true);
         try {
-          const updated = await snagsApi.addPhotos(editSnag.id, editNewPhotos);
-          updatedPhotoCount = updated.photo_count ?? updatedPhotoCount + editNewPhotos.length;
+          serverSnag = await snagsApi.addPhotos(editSnag.id, editNewPhotos);
         } finally {
           setEditUploadingPhotos(false);
         }
       }
 
-      // 3. Reflect in local list
-      setSnags(snags.map((s) =>
-        s.id === editSnag.id
-          ? {
-              ...s,
-              note: editNote,
-              location: editLoc,
-              priority: editPri,
-              photo_count: updatedPhotoCount,
-            }
-          : s
-      ));
+      // 3. Merge our text-edit changes into whatever the server returned.
+      // `serverSnag` may be from addPhotos (has fresh photo_urls/count) or
+      // may still be the pre-edit editSnag (if no new photos were staged).
+      // Either way we overlay the text fields we just saved.
+      const merged = {
+        ...serverSnag,
+        note: editNote,
+        location: editLoc,
+        priority: editPri,
+      };
+      setSnags(snags.map((s) => (s.id === editSnag.id ? merged : s)));
+
       setEditSnag(null);
       setEditNewPhotos([]);
       if (editPhotoInputRef.current) editPhotoInputRef.current.value = "";
@@ -183,7 +187,9 @@ export default function SnagsScreen() {
   const handleEditPhotoPick = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0 || !editSnag) return;
-    const existing = editSnag.photo_count ?? 0;
+    // Derive existing count from photo_urls so it stays accurate after
+    // in-session deletions (handleDeleteExistingPhoto updates editSnag).
+    const existing = (editSnag.photo_urls ?? []).filter(Boolean).length;
     const remaining = 4 - existing - editNewPhotos.length;
     if (remaining <= 0) {
       showToast("This snag already has 4 photos");
@@ -203,6 +209,35 @@ export default function SnagsScreen() {
     } finally {
       // Reset the input so the same files can be re-picked if the user removes and re-adds
       if (editPhotoInputRef.current) editPhotoInputRef.current.value = "";
+    }
+  };
+
+  /**
+   * Remove an already-saved photo from a snag. Slot is 1-based (matches the
+   * backend endpoint's URL param).
+   *
+   * Policy decision — we delete immediately instead of queuing the delete
+   * for the next Save. That matches the instant-remove behaviour for pending
+   * (new) photos and how mobile users expect an X button to work. The
+   * confirm dialog would be overkill for something that's one tap to
+   * restage if mistaken.
+   */
+  const handleDeleteExistingPhoto = async (slot: number) => {
+    if (!editSnag || editDeletingSlot !== null) return;
+    setEditDeletingSlot(slot);
+    try {
+      const updated = await snagsApi.deletePhoto(editSnag.id, slot);
+      // Patch the editSnag reference so the modal reflects the new photo_urls
+      // state without needing to re-open.
+      setEditSnag(updated);
+      // Also update the broader snag list so the thumbnail outside the modal
+      // is in sync when the modal closes.
+      setSnags(snags.map((s) => s.id === updated.id ? updated : s));
+      showToast("Photo removed");
+    } catch (err: any) {
+      showToast(err?.message || "Failed to remove photo");
+    } finally {
+      setEditDeletingSlot(null);
     }
   };
 
@@ -791,10 +826,20 @@ export default function SnagsScreen() {
 
             {/* Photos */}
             {(() => {
-              const existing = editSnag?.photo_count ?? 0;
+              // existingPhotos is a 4-element slot-ordered list from the backend.
+              // Some slots may be null (empty). We render the non-null ones as
+              // thumbnails with a remove button that calls the backend
+              // DELETE /snags/{id}/photos/{slot} endpoint.
+              const existingSlots: (string | null)[] = editSnag?.photo_urls ?? [];
+              const existingPhotos: { slot: number; url: string }[] = existingSlots
+                .map((url, idx) => (url ? { slot: idx + 1, url } : null))
+                .filter((x): x is { slot: number; url: string } => x !== null);
+
+              const existing = existingPhotos.length;
               const pending = editNewPhotos.length;
               const total = existing + pending;
               const remaining = Math.max(0, 4 - total);
+
               return (
                 <div className="mb-5">
                   <div className="flex items-center justify-between mb-1.5">
@@ -807,25 +852,52 @@ export default function SnagsScreen() {
                     </span>
                   </div>
 
-                  {/* Pending-photo thumbnails */}
-                  {pending > 0 && (
+                  {/* Existing photos + pending new photos, in one strip */}
+                  {(existing > 0 || pending > 0) && (
                     <div className="flex flex-wrap gap-2 mb-2">
+                      {existingPhotos.map(({ slot, url }) => (
+                        <div
+                          key={`existing-${slot}`}
+                          className="relative w-16 h-16 rounded-lg overflow-hidden border border-[var(--border)]"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={url} alt="" className="w-full h-full object-cover" />
+                          <button
+                            onClick={() => handleDeleteExistingPhoto(slot)}
+                            disabled={editDeletingSlot === slot}
+                            className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center disabled:opacity-50"
+                            aria-label={`Remove photo ${slot}`}
+                            title="Remove this photo"
+                          >
+                            {editDeletingSlot === slot ? (
+                              <span className="block w-2 h-2 rounded-full bg-white animate-pulse" />
+                            ) : (
+                              <X className="w-3 h-3" />
+                            )}
+                          </button>
+                        </div>
+                      ))}
+
                       {editNewPhotos.map((f, i) => {
-                        const url = URL.createObjectURL(f);
+                        const objectUrl = URL.createObjectURL(f);
                         return (
                           <div
-                            key={`${f.name}-${i}`}
-                            className="relative w-16 h-16 rounded-lg overflow-hidden border border-[var(--border)]"
+                            key={`pending-${f.name}-${i}`}
+                            className="relative w-16 h-16 rounded-lg overflow-hidden border border-brand/60"
+                            title="New photo (will upload on save)"
                           >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={url} alt="" className="w-full h-full object-cover" />
+                            <img src={objectUrl} alt="" className="w-full h-full object-cover" />
+                            <span className="absolute bottom-0 left-0 right-0 text-[8px] text-center bg-brand/80 text-white py-0.5 font-semibold uppercase">
+                              New
+                            </span>
                             <button
                               onClick={() => {
                                 setEditNewPhotos((prev) => prev.filter((_, idx) => idx !== i));
-                                URL.revokeObjectURL(url);
+                                URL.revokeObjectURL(objectUrl);
                               }}
                               className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center"
-                              aria-label="Remove photo"
+                              aria-label="Remove pending photo"
                             >
                               <X className="w-3 h-3" />
                             </button>
@@ -857,7 +929,7 @@ export default function SnagsScreen() {
                     </>
                   ) : (
                     <p className="text-[11px] text-[var(--text3)] italic">
-                      This snag has the maximum of 4 photos.
+                      This snag has the maximum of 4 photos. Remove one above to add another.
                     </p>
                   )}
                 </div>
