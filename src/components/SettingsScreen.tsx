@@ -452,7 +452,7 @@ export default function SettingsScreen() {
                       <p className="text-[12px] text-[var(--text3)] mb-3 px-4 leading-relaxed">
                         {company.is_owner
                           ? "Add your logo to PDF reports and remove the VoxSite watermark by upgrading."
-                          : "Once your company owner upgrades, your logo will appear on PDF reports automatically."}
+                          : "Once your company admin upgrades, your logo will appear on PDF reports automatically."}
                       </p>
                       {company.is_owner && (
                         <button
@@ -532,7 +532,7 @@ export default function SettingsScreen() {
                         )}
                         <p className={`text-[10px] font-semibold uppercase ${
                           isOwner ? "text-brand" : "text-[var(--text3)]"
-                        }`}>{m.role}</p>
+                        }`}>{m.role === "owner" ? "Admin" : m.role}</p>
                       </div>
                       {/* Only owner can remove, and can't remove self */}
                       {company.is_owner && !isMe && (
