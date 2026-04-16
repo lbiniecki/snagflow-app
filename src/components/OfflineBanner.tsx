@@ -35,12 +35,12 @@ export default function OfflineBanner() {
       ) : syncing ? (
         <>
           <RefreshCw className="w-4 h-4 flex-shrink-0 animate-spin" />
-          <span className="flex-1">Syncing {pendingCount} snag{pendingCount !== 1 ? "s" : ""}…</span>
+          <span className="flex-1">Syncing {pendingCount} item{pendingCount !== 1 ? "s" : ""}…</span>
         </>
       ) : (
         <>
           <CloudUpload className="w-4 h-4 flex-shrink-0" />
-          <span className="flex-1">{pendingCount} snag{pendingCount !== 1 ? "s" : ""} waiting to sync</span>
+          <span className="flex-1">{pendingCount} item{pendingCount !== 1 ? "s" : ""} waiting to sync</span>
           <button
             onClick={manualSync}
             className="px-2 py-1 bg-black/20 rounded text-[10px] font-bold uppercase"

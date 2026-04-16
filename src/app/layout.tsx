@@ -2,8 +2,8 @@ import type { Metadata, Viewport } from "next";
 import "../styles/globals.css";
 
 export const metadata: Metadata = {
-  title: "VoxSite — Site Snagging, Simplified",
-  description: "Professional construction snagging tool with voice dictation, photo capture, and PDF reports.",
+  title: "VoxSite — Site Inspections, Simplified",
+  description: "Professional construction inspection tool with voice dictation, photo capture, and PDF reports.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

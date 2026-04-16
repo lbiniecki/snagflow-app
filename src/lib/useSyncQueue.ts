@@ -104,11 +104,11 @@ export function useSyncQueue() {
       }
 
       if (synced > 0) {
-        showToast(`Synced ${synced} snag${synced > 1 ? "s" : ""}`);
+        showToast(`Synced ${synced} item${synced > 1 ? "s" : ""}`);
       }
       // Only toast failures for items we actually tried this run
       if (failed > 0) {
-        showToast(`${failed} snag${failed > 1 ? "s" : ""} failed to sync — will retry`);
+        showToast(`${failed} item${failed > 1 ? "s" : ""} failed to sync — will retry`);
       }
       // If everything left is in the skipped pile, surface that so the user
       // knows why "pending" isn't going down.

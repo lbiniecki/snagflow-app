@@ -109,7 +109,7 @@ export default function CaptureScreen() {
     // Polite validation — previously we early-returned silently, which made
     // the Save button feel broken when the user forgot to fill in a description.
     if (!note.trim()) {
-      showToast("Please add a description before saving this snag.");
+      showToast("Please add a description before saving this item.");
       return;
     }
     setSaving(true);
@@ -141,7 +141,7 @@ export default function CaptureScreen() {
 
       const created = await Promise.race([createPromise, timeoutPromise]) as any;
       setSnags([created, ...snags]);
-      showToast("Snag saved!");
+      showToast("Item saved!");
       setScreen("snags");
     } catch (err: any) {
       // Upload failed or timed out — save offline
@@ -270,7 +270,7 @@ export default function CaptureScreen() {
             <textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Describe the snag… or tap the mic to dictate"
+              placeholder="Describe the item… or tap the mic to dictate"
               rows={4}
               className="flex-1 px-3.5 py-3 bg-[var(--bg2)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors resize-none leading-relaxed"
             />
@@ -355,7 +355,7 @@ export default function CaptureScreen() {
           disabled={saving}
           className="w-full h-[52px] bg-brand hover:bg-brand-light text-white text-base font-semibold rounded-xl transition-all disabled:opacity-50 animate-slide-up delay-200"
         >
-          {saving ? "Saving…" : !isOnline ? "Save Offline" : "Save Snag"}
+          {saving ? "Saving…" : !isOnline ? "Save Offline" : "Save Item"}
         </button>
       </div>
     </div>

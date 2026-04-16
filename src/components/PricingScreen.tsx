@@ -63,7 +63,7 @@ const LIMIT_ROWS: LimitRow[] = [
   { label: "Users",        values: [1, 3, 10, 25, 50] },
   { label: "Projects",     values: [2, 5, 15, "Unlimited", "Unlimited"] },
   { label: "Snags / month", values: [20, 100, 500, "Unlimited", "Unlimited"] },
-  { label: "Photos / snag", values: [4, 4, 4, 4, 4] },
+  { label: "Photos / item", values: [4, 4, 4, 4, 4] },
 ];
 
 const FEATURE_ROWS: FeatureRow[] = [
@@ -85,9 +85,9 @@ const WATERMARK_ROW: FeatureRow = {
 // Per-plan summary shown inside each card (headline limits)
 function summaryFor(slug: string): string {
   switch (slug) {
-    case "free":     return "1 user · 2 projects · 20 snags/mo";
-    case "starter":  return "3 users · 5 projects · 100 snags/mo";
-    case "team":     return "10 users · 15 projects · 500 snags/mo";
+    case "free":     return "1 user · 2 projects · 20 items/mo";
+    case "starter":  return "3 users · 5 projects · 100 items/mo";
+    case "team":     return "10 users · 15 projects · 500 items/mo";
     case "pro":      return "25 users · Unlimited";
     case "business": return "50 users · Unlimited";
     default:         return "";
@@ -104,7 +104,7 @@ function highlightsFor(slug: string): string[] {
     case "team":
       return ["Everything in Starter", "Send reports by email", "10 team seats"];
     case "pro":
-      return ["Everything in Team", "Unlimited projects", "Unlimited snags"];
+      return ["Everything in Team", "Unlimited projects", "Unlimited items"];
     case "business":
       return ["Everything in Pro", "50 team seats", "Priority support"];
     default:

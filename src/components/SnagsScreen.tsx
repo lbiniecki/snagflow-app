@@ -93,25 +93,25 @@ export default function SnagsScreen() {
     try {
       await snagsApi.update(id, { status: newStatus as any });
       setSnags(snags.map((s) => s.id === id ? { ...s, status: newStatus as any } : s));
-      showToast(`Snag ${newStatus}`);
+      showToast(`Item ${newStatus}`);
     } catch (err: any) {
       showToast(err.message);
     }
   };
 
   const deleteSnag = async (s: typeof snags[0]) => {
-    const label = s.note.trim().slice(0, 60) || "this snag";
+    const label = s.note.trim().slice(0, 60) || "this item";
     const ok = await confirm({
-      title: "Delete this snag?",
+      title: "Delete this item?",
       message: `"${label}"${s.note.trim().length > 60 ? "…" : ""} and any photos attached to it will be permanently removed. This can't be undone.`,
-      confirmLabel: "Delete snag",
+      confirmLabel: "Delete item",
       tone: "destructive",
     });
     if (!ok) return;
     try {
       await snagsApi.delete(s.id);
       setSnags(snags.filter((x) => x.id !== s.id));
-      showToast("Snag deleted");
+      showToast("Item deleted");
     } catch (err: any) {
       showToast(err.message);
     }
@@ -131,9 +131,9 @@ export default function SnagsScreen() {
       const compressed = await compressImage(file).catch(() => file);
       await snagsApi.closeWithPhoto(closingSnagId, compressed);
       setSnags(snags.map((s) => s.id === closingSnagId ? { ...s, status: "closed" as const } : s));
-      showToast("Snag closed with photo");
+      showToast("Item closed with photo");
     } catch (err: any) {
-      showToast(err.message || "Failed to close snag");
+      showToast(err.message || "Failed to close item");
     } finally {
       setClosingSnagId(null);
       if (closePhotoRef.current) closePhotoRef.current.value = "";
@@ -176,7 +176,7 @@ export default function SnagsScreen() {
       setEditNewPhotos([]);
       if (editPhotoInputRef.current) editPhotoInputRef.current.value = "";
       if (editGalleryRef.current) editGalleryRef.current.value = "";
-      showToast(editNewPhotos.length > 0 ? "Snag updated with new photos" : "Snag updated");
+      showToast(editNewPhotos.length > 0 ? "Item updated with new photos" : "Item updated");
     } catch (err: any) {
       showToast(err.message);
     }
@@ -195,7 +195,7 @@ export default function SnagsScreen() {
     const existing = (editSnag.photo_urls ?? []).filter(Boolean).length;
     const remaining = 4 - existing - editNewPhotos.length;
     if (remaining <= 0) {
-      showToast("This snag already has 4 photos");
+      showToast("This item already has 4 photos");
       return;
     }
     const toAdd = files.slice(0, remaining);
@@ -478,7 +478,7 @@ export default function SnagsScreen() {
         {/* Visit closed banner */}
         {visitClosed && (
           <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-3 mb-4 text-center animate-fade-in">
-            <p className="text-xs font-semibold text-green-400">Visit closed — reopen from the visits screen to add new snags</p>
+            <p className="text-xs font-semibold text-green-400">Visit closed — reopen from the visits screen to add new items</p>
           </div>
         )}
 
@@ -510,8 +510,8 @@ export default function SnagsScreen() {
         ) : filtered.length === 0 ? (
           <div className="text-center py-16 text-[var(--text3)] animate-fade-in">
             <Camera className="w-8 h-8 mx-auto mb-3 opacity-30" />
-            <p className="text-sm">No snags {filter !== "all" ? `with status "${filter}"` : "yet"}</p>
-            <p className="text-xs mt-1">Tap + to add your first snag</p>
+            <p className="text-sm">No items {filter !== "all" ? `with status "${filter}"` : "yet"}</p>
+            <p className="text-xs mt-1">Tap + to add your first item</p>
           </div>
         ) : (
           filtered.map((s, i) => (
@@ -604,7 +604,7 @@ export default function SnagsScreen() {
                 <button onClick={() => openEdit(s)} className="p-2 rounded-lg bg-[var(--surface)] text-[var(--text2)] hover:text-white transition-colors">
                   <Pencil className="w-4 h-4" />
                 </button>
-                <button onClick={() => deleteSnag(s)} className="p-2 rounded-lg bg-red-400/10 text-red-400 hover:bg-red-400/20 transition-colors" title="Delete snag">
+                <button onClick={() => deleteSnag(s)} className="p-2 rounded-lg bg-red-400/10 text-red-400 hover:bg-red-400/20 transition-colors" title="Delete item">
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
@@ -629,7 +629,7 @@ export default function SnagsScreen() {
           <div className="w-full max-w-[480px] max-h-[90vh] bg-[var(--bg2)] rounded-t-2xl p-5 overflow-y-auto animate-slide-up" onClick={(e) => e.stopPropagation()}>
             <div className="w-10 h-1 bg-[var(--border)] rounded-full mx-auto mb-4" />
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold">Snagging Report</h3>
+              <h3 className="text-lg font-bold">Inspection Report</h3>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setShowEmailModal(true)}
@@ -866,6 +866,16 @@ export default function SnagsScreen() {
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={url} alt="" className="w-full h-full object-cover" />
+                          {/* Download button — bottom-left */}
+                          <button
+                            onClick={() => savePhoto(url, { snagDate: editSnag?.created_at || "", photoNo: slot })}
+                            className="absolute bottom-0.5 left-0.5 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center"
+                            aria-label={`Download photo ${slot}`}
+                            title="Download this photo"
+                          >
+                            <Download className="w-3 h-3" />
+                          </button>
+                          {/* Delete button — top-right */}
                           <button
                             onClick={() => handleDeleteExistingPhoto(slot)}
                             disabled={editDeletingSlot === slot}
@@ -950,7 +960,7 @@ export default function SnagsScreen() {
                     </div>
                   ) : (
                     <p className="text-[11px] text-[var(--text3)] italic">
-                      This snag has the maximum of 4 photos. Remove one above to add another.
+                      This item has the maximum of 4 photos. Remove one above to add another.
                     </p>
                   )}
                 </div>

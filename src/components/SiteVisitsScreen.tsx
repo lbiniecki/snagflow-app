@@ -139,7 +139,7 @@ export default function SiteVisitsScreen() {
     try {
       await visitsApi.reopen(id);
       setVisits(visits.map((v) => (v.id === id ? { ...v, status: "open" as const } : v)));
-      showToast("Visit reopened — you can add snags again");
+      showToast("Visit reopened — you can add items again");
     } catch (err: any) {
       showToast(err.message);
     }
