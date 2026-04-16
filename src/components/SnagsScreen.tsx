@@ -8,6 +8,7 @@ import { getPendingForVisit, getPendingSnags, type PendingSnag } from "@/lib/off
 import {
   ChevronLeft, FileText, Plus, Pencil, Trash2, Camera,
   MapPin, Download, X, Mic, WifiOff, CloudUpload, Mail,
+  Image as ImageIcon,
 } from "lucide-react";
 import clsx from "clsx";
 import BottomNav from "./BottomNav";
@@ -37,6 +38,7 @@ export default function SnagsScreen() {
   // and its delete request is in flight. Used only for UI feedback.
   const [editDeletingSlot, setEditDeletingSlot] = useState<number | null>(null);
   const editPhotoInputRef = useRef<HTMLInputElement>(null);
+  const editGalleryRef = useRef<HTMLInputElement>(null);
   const [downloading, setDownloading] = useState(false);
   const [weather, setWeather] = useState("");
   const [visitNo, setVisitNo] = useState("");
@@ -173,6 +175,7 @@ export default function SnagsScreen() {
       setEditSnag(null);
       setEditNewPhotos([]);
       if (editPhotoInputRef.current) editPhotoInputRef.current.value = "";
+      if (editGalleryRef.current) editGalleryRef.current.value = "";
       showToast(editNewPhotos.length > 0 ? "Snag updated with new photos" : "Snag updated");
     } catch (err: any) {
       showToast(err.message);
@@ -207,8 +210,9 @@ export default function SnagsScreen() {
     } catch {
       showToast("Failed to prepare photos");
     } finally {
-      // Reset the input so the same files can be re-picked if the user removes and re-adds
+      // Reset the inputs so the same files can be re-picked if the user removes and re-adds
       if (editPhotoInputRef.current) editPhotoInputRef.current.value = "";
+      if (editGalleryRef.current) editGalleryRef.current.value = "";
     }
   };
 
@@ -425,7 +429,7 @@ export default function SnagsScreen() {
         ref={closePhotoRef}
         type="file"
         accept="image/*"
-
+        capture="environment"
         className="hidden"
         onChange={handleClosePhoto}
       />
@@ -909,24 +913,41 @@ export default function SnagsScreen() {
 
                   {/* Add-more picker */}
                   {remaining > 0 ? (
-                    <>
+                    <div className="flex gap-2">
+                      {/* Camera input — capture="environment" forces rear camera on Android/iOS */}
                       <input
                         ref={editPhotoInputRef}
                         type="file"
                         accept="image/*"
-                        multiple
+                        capture="environment"
                         onChange={handleEditPhotoPick}
                         className="hidden"
-                        id="edit-photo-input"
+                        id="edit-photo-camera"
+                      />
+                      {/* Gallery input — no capture, opens file/gallery picker */}
+                      <input
+                        ref={editGalleryRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleEditPhotoPick}
+                        className="hidden"
+                        id="edit-photo-gallery"
                       />
                       <label
-                        htmlFor="edit-photo-input"
-                        className="flex items-center justify-center gap-2 w-full h-11 border border-dashed border-[var(--border)] rounded-lg text-xs font-semibold text-[var(--text2)] hover:text-white hover:border-brand transition-colors cursor-pointer"
+                        htmlFor="edit-photo-camera"
+                        className="flex-1 flex items-center justify-center gap-1.5 h-11 border border-dashed border-[var(--border)] rounded-lg text-xs font-semibold text-[var(--text2)] hover:text-white hover:border-brand transition-colors cursor-pointer"
                       >
                         <Camera className="w-4 h-4" />
-                        Add photo{remaining > 1 ? "s" : ""} ({remaining} more allowed)
+                        Take Photo
                       </label>
-                    </>
+                      <label
+                        htmlFor="edit-photo-gallery"
+                        className="flex-1 flex items-center justify-center gap-1.5 h-11 border border-dashed border-[var(--border)] rounded-lg text-xs font-semibold text-[var(--text2)] hover:text-white hover:border-brand transition-colors cursor-pointer"
+                      >
+                        <ImageIcon className="w-4 h-4" />
+                        Gallery
+                      </label>
+                    </div>
                   ) : (
                     <p className="text-[11px] text-[var(--text3)] italic">
                       This snag has the maximum of 4 photos. Remove one above to add another.

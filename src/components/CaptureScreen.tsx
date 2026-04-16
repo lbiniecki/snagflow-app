@@ -7,7 +7,7 @@ import { useAudioRecorder } from "@/lib/useAudioRecorder";
 import { useOnlineStatus } from "@/lib/useOnlineStatus";
 import { compressImage } from "@/lib/compressImage";
 import { savePendingSnag, type PendingSnag } from "@/lib/offlineStore";
-import { ChevronLeft, Camera, Mic, X, Plus, WifiOff } from "lucide-react";
+import { ChevronLeft, Camera, Mic, X, Plus, WifiOff, Image as ImageIcon } from "lucide-react";
 import clsx from "clsx";
 
 const PRIORITY_STYLES = {
@@ -37,7 +37,8 @@ export default function CaptureScreen() {
   const [compressing, setCompressing] = useState(false);
   const [micTarget, setMicTarget] = useState<"note" | "location" | null>(null);
 
-  const fileRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
+  const galleryRef = useRef<HTMLInputElement>(null);
 
   const handleAddPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -67,7 +68,8 @@ export default function CaptureScreen() {
       setPhotos((prev) => [...prev, { file, preview }]);
     } finally {
       setCompressing(false);
-      if (fileRef.current) fileRef.current.value = "";
+      if (cameraRef.current) cameraRef.current.value = "";
+      if (galleryRef.current) galleryRef.current.value = "";
     }
   };
 
@@ -218,29 +220,42 @@ export default function CaptureScreen() {
             ))}
 
             {photos.length < MAX_PHOTOS && (
-              <div
-                onClick={() => !compressing && fileRef.current?.click()}
-                className="aspect-[4/3] rounded-xl bg-[var(--bg3)] border-2 border-dashed border-[var(--border)] flex flex-col items-center justify-center gap-1.5 cursor-pointer hover:border-brand hover:bg-brand/5 transition-all"
-              >
+              <div className="aspect-[4/3] rounded-xl bg-[var(--bg3)] border-2 border-dashed border-[var(--border)] flex flex-col items-center justify-center gap-2">
                 {compressing ? (
                   <span className="text-xs text-[var(--text3)]">Compressing…</span>
                 ) : (
                   <>
-                    {photos.length === 0 ? (
-                      <Camera className="w-7 h-7 text-[var(--text3)]" />
-                    ) : (
-                      <Plus className="w-6 h-6 text-[var(--text3)]" />
-                    )}
-                    <span className="text-[10px] text-[var(--text3)]">
-                      {photos.length === 0 ? "Tap to add photo" : "Add another"}
-                    </span>
+                    <button
+                      onClick={() => cameraRef.current?.click()}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-brand/10 text-brand text-xs font-semibold hover:bg-brand/20 transition-colors"
+                    >
+                      <Camera className="w-4 h-4" />
+                      Take Photo
+                    </button>
+                    <button
+                      onClick={() => galleryRef.current?.click()}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--surface)] text-[var(--text2)] text-xs font-semibold hover:text-white transition-colors"
+                    >
+                      <ImageIcon className="w-4 h-4" />
+                      From Gallery
+                    </button>
                   </>
                 )}
               </div>
             )}
           </div>
+          {/* Camera input — capture="environment" forces rear camera on mobile */}
           <input
-            ref={fileRef}
+            ref={cameraRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={handleAddPhoto}
+          />
+          {/* Gallery input — no capture attr, opens file/gallery picker */}
+          <input
+            ref={galleryRef}
             type="file"
             accept="image/*"
             className="hidden"
