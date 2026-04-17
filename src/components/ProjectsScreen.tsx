@@ -190,70 +190,59 @@ export default function ProjectsScreen() {
       {/* Create modal */}
       {showModal && (
         <div
-          className="fixed inset-0 bg-black/70 z-50 flex items-end justify-center animate-fade-in"
+          className="fixed inset-0 bg-black/70 z-50 animate-fade-in overflow-y-auto"
           onClick={() => setShowModal(false)}
-          // `dvh` (dynamic viewport height) shrinks when the mobile keyboard
-          // comes up, so `items-end` sits the modal just above the keyboard
-          // instead of off-screen. Old-browser fallback is `100vh`.
-          style={{ height: "100vh", maxHeight: "100dvh" }}
+          style={{ height: "100dvh" }}
         >
-          <div
-            className="w-full max-w-[480px] bg-[var(--bg2)] rounded-t-2xl p-5 animate-slide-up overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-            // Cap the sheet at ~90% of viewport so it always fits even with
-            // keyboard up, and let content inside scroll if we ever add more
-            // fields.
-            style={{ maxHeight: "90dvh" }}
-          >
-            <div className="w-10 h-1 bg-[var(--border)] rounded-full mx-auto mb-4" />
-            <div className="flex justify-between items-center mb-5">
-              <h3 className="text-lg font-bold">New Project</h3>
-              <button onClick={() => setShowModal(false)} className="text-[var(--text3)]"><X className="w-5 h-5" /></button>
-            </div>
-
-            <div className="space-y-3 mb-5">
-              <div>
-                <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">Project Name</label>
-                <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Riverside Apartments – Block B" autoFocus
-                  // Scroll the focused field into view on keyboard pop. Works
-                  // on iOS Safari/Chrome and Android Chrome — those browsers
-                  // fire focus before showing the keyboard, then resize;
-                  // the setTimeout waits for the resize to settle before
-                  // scrolling so the final resting position is accurate.
-                  onFocus={(e) => {
-                    const el = e.currentTarget;
-                    setTimeout(() => el.scrollIntoView({ block: "center", behavior: "smooth" }), 300);
-                  }}
-                  className="w-full px-3.5 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
-                />
-              </div>
-              <div>
-                <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">Client</label>
-                <input value={client} onChange={(e) => setClient(e.target.value)} placeholder="e.g. Horizon Developments"
-                  onFocus={(e) => {
-                    const el = e.currentTarget;
-                    setTimeout(() => el.scrollIntoView({ block: "center", behavior: "smooth" }), 300);
-                  }}
-                  className="w-full px-3.5 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
-                />
-              </div>
-              <div>
-                <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">Site Address</label>
-                <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="e.g. 42 River Road, Dublin"
-                  onFocus={(e) => {
-                    const el = e.currentTarget;
-                    setTimeout(() => el.scrollIntoView({ block: "center", behavior: "smooth" }), 300);
-                  }}
-                  className="w-full px-3.5 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
-                />
-              </div>
-            </div>
-
-            <button onClick={handleCreate} disabled={!name.trim()}
-              className="w-full h-12 bg-brand hover:bg-brand-light text-white font-semibold rounded-lg transition-all disabled:opacity-50"
+          <div className="min-h-full flex items-start justify-center pt-[12vh] pb-8 px-4">
+            <div
+              className="w-full max-w-[480px] bg-[var(--bg2)] rounded-2xl p-5 animate-slide-up"
+              onClick={(e) => e.stopPropagation()}
             >
-              Create Project
-            </button>
+              <div className="flex justify-between items-center mb-5">
+                <h3 className="text-lg font-bold">New Project</h3>
+                <button onClick={() => setShowModal(false)} className="text-[var(--text3)]"><X className="w-5 h-5" /></button>
+              </div>
+
+              <div className="space-y-3 mb-5">
+                <div>
+                  <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">Project Name</label>
+                  <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Riverside Apartments – Block B" autoFocus
+                    onFocus={(e) => {
+                      const el = e.currentTarget;
+                      setTimeout(() => el.scrollIntoView({ block: "center", behavior: "smooth" }), 300);
+                    }}
+                    className="w-full px-3.5 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">Client</label>
+                  <input value={client} onChange={(e) => setClient(e.target.value)} placeholder="e.g. Horizon Developments"
+                    onFocus={(e) => {
+                      const el = e.currentTarget;
+                      setTimeout(() => el.scrollIntoView({ block: "center", behavior: "smooth" }), 300);
+                    }}
+                    className="w-full px-3.5 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">Site Address</label>
+                  <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="e.g. 42 River Road, Dublin"
+                    onFocus={(e) => {
+                      const el = e.currentTarget;
+                      setTimeout(() => el.scrollIntoView({ block: "center", behavior: "smooth" }), 300);
+                    }}
+                    className="w-full px-3.5 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
+                  />
+                </div>
+              </div>
+
+              <button onClick={handleCreate} disabled={!name.trim()}
+                className="w-full h-12 bg-brand hover:bg-brand-light text-white font-semibold rounded-lg transition-all disabled:opacity-50"
+              >
+                Create Project
+              </button>
+            </div>
           </div>
         </div>
       )}
