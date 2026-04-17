@@ -31,6 +31,13 @@ export default function Home() {
 
   // Restore session on mount
   useEffect(() => {
+    // If the URL has ?setup=, the user is an invitee arriving to set their
+    // password. Don't restore a stale session — let LoginScreen handle it.
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("setup")) return;
+    }
+
     const token = getToken();
     if (!token) return;
 
