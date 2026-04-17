@@ -370,27 +370,30 @@ export default function SnagsScreen() {
   };
 
   /**
-   * Build the download filename for a snag photo.
-   * Format: ProjectCode_YYYY_MM_DD_no_NN.jpg
+   * Build the download filename for an item photo.
+   * Format: ProjectName_YYYY_MM_DD_V01_Issue01a.jpg
    *
-   * `photoNo` is the 1-based index of this photo on the snag (1..4, plus an
-   * optional _rect suffix for the rectification/close-with-photo image).
+   * Photo slot maps to letter: 1→a, 2→b, 3→c, 4→d
+   * Rectification photos get _rect suffix.
    */
   const buildPhotoFilename = (
     snagDate: string,
-    photoNo: number,
+    photoSlot: number,
+    itemNo?: number,
     isRectification = false,
   ): string => {
     const code = projectCode(currentProject?.name);
     const d = new Date(snagDate);
-    // Fall back to today's date if the server date is somehow unparseable.
     const safeDate = isNaN(d.getTime()) ? new Date() : d;
     const y = safeDate.getFullYear();
     const m = String(safeDate.getMonth() + 1).padStart(2, "0");
     const day = String(safeDate.getDate()).padStart(2, "0");
-    const nn = String(photoNo).padStart(2, "0");
+    const visitNo = currentVisit?.visit_no ?? 1;
+    const vPart = `V${String(visitNo).padStart(2, "0")}`;
+    const issuePart = `Issue${String(itemNo ?? 1).padStart(2, "0")}`;
+    const slotLetter = ["a", "b", "c", "d"][Math.max(0, Math.min(3, photoSlot - 1))];
     const suffix = isRectification ? "_rect" : "";
-    return `${code}_${y}_${m}_${day}_no_${nn}${suffix}.jpg`;
+    return `${code}_${y}_${m}_${day}_${vPart}_${issuePart}${slotLetter}${suffix}.jpg`;
   };
 
   const savePhoto = async (
@@ -398,6 +401,7 @@ export default function SnagsScreen() {
     opts: {
       snagDate: string;
       photoNo?: number;
+      itemNo?: number;
       isRectification?: boolean;
     },
   ) => {
@@ -411,6 +415,7 @@ export default function SnagsScreen() {
       a.download = buildPhotoFilename(
         opts.snagDate,
         opts.photoNo ?? 1,
+        opts.itemNo,
         opts.isRectification ?? false,
       );
       document.body.appendChild(a);
@@ -545,7 +550,7 @@ export default function SnagsScreen() {
                   <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 group">
                     <img src={s.photo_url} alt="" className="w-full h-full object-cover" />
                     <button
-                      onClick={(e) => { e.stopPropagation(); savePhoto(s.photo_url!, { snagDate: s.created_at, photoNo: 1 }); }}
+                      onClick={(e) => { e.stopPropagation(); savePhoto(s.photo_url!, { snagDate: s.created_at, photoNo: 1, itemNo: s.snag_no }); }}
                       className="absolute inset-0 bg-black/0 group-hover:bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 active:opacity-100 transition-all"
                       title="Save photo"
                     >
@@ -599,7 +604,7 @@ export default function SnagsScreen() {
                 )}
                 {s.photo_url && (
                   <button
-                    onClick={() => savePhoto(s.photo_url!, { snagDate: s.created_at, photoNo: 1 })}
+                    onClick={() => savePhoto(s.photo_url!, { snagDate: s.created_at, photoNo: 1, itemNo: s.snag_no })}
                     className="p-2 rounded-lg bg-[var(--surface)] text-[var(--text2)] hover:text-white transition-colors"
                     title="Save photo"
                   >
@@ -873,7 +878,7 @@ export default function SnagsScreen() {
                           <img src={url} alt="" className="w-full h-full object-cover" />
                           {/* Download button — bottom-left */}
                           <button
-                            onClick={() => savePhoto(url, { snagDate: editSnag?.created_at || "", photoNo: slot })}
+                            onClick={() => savePhoto(url, { snagDate: editSnag?.created_at || "", photoNo: slot, itemNo: editSnag?.snag_no })}
                             className="absolute bottom-0.5 left-0.5 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center"
                             aria-label={`Download photo ${slot}`}
                             title="Download this photo"

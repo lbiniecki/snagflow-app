@@ -39,6 +39,7 @@ export interface Snag {
   id: string;
   project_id: string;
   visit_id?: string;
+  snag_no?: number;  // auto-assigned item number within the project
   note: string;
   location?: string;
   status: "open" | "closed";

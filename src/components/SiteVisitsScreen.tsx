@@ -312,8 +312,16 @@ export default function SiteVisitsScreen() {
 
       {/* Create Visit modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-end justify-center animate-fade-in" onClick={() => { setShowModal(false); resetForm(); }}>
-          <div className="w-full max-w-[480px] max-h-[90vh] bg-[var(--bg2)] rounded-t-2xl p-5 overflow-y-auto animate-slide-up" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 bg-black/70 z-50 flex items-end justify-center animate-fade-in"
+          onClick={() => { setShowModal(false); resetForm(); }}
+          style={{ height: "100vh", maxHeight: "100dvh" }}
+        >
+          <div
+            className="w-full max-w-[480px] bg-[var(--bg2)] rounded-t-2xl p-5 overflow-y-auto animate-slide-up"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxHeight: "90dvh" }}
+          >
             <div className="w-10 h-1 bg-[var(--border)] rounded-full mx-auto mb-4" />
             <div className="flex justify-between items-center mb-5">
               <h3 className="text-lg font-bold">{editingId ? "Edit Visit" : "New Site Visit"}</h3>
@@ -324,18 +332,30 @@ export default function SiteVisitsScreen() {
               <div>
                 <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">Weather</label>
                 <input value={weather} onChange={(e) => setWeather(e.target.value)} placeholder="e.g. Sunny, 18°C, light wind"
+                  onFocus={(e) => {
+                    const el = e.currentTarget;
+                    setTimeout(() => el.scrollIntoView({ block: "center", behavior: "smooth" }), 300);
+                  }}
                   className="w-full px-3.5 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
                 />
               </div>
               <div>
                 <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">Attendees</label>
                 <input value={attendees} onChange={(e) => setAttendees(e.target.value)} placeholder="e.g. John, Mary, Client rep"
+                  onFocus={(e) => {
+                    const el = e.currentTarget;
+                    setTimeout(() => el.scrollIntoView({ block: "center", behavior: "smooth" }), 300);
+                  }}
                   className="w-full px-3.5 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
                 />
               </div>
               <div>
                 <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">Access Notes</label>
                 <input value={accessNotes} onChange={(e) => setAccessNotes(e.target.value)} placeholder="e.g. Scaffolding required for levels 2-4"
+                  onFocus={(e) => {
+                    const el = e.currentTarget;
+                    setTimeout(() => el.scrollIntoView({ block: "center", behavior: "smooth" }), 300);
+                  }}
                   className="w-full px-3.5 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
                 />
               </div>
