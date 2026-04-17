@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import { useStore } from "@/lib/store";
 import { projects as projectsApi, companies as companiesApi } from "@/lib/api";
-import { LogOut, Plus, X, Sparkles } from "lucide-react";
+import { LogOut, Plus, X, Sparkles, Trash2 } from "lucide-react";
 import BottomNav from "./BottomNav";
+import { useConfirm } from "./ConfirmDialog";
 
 export default function ProjectsScreen() {
   const {
@@ -17,6 +18,24 @@ export default function ProjectsScreen() {
   const [name, setName] = useState("");
   const [client, setClient] = useState("");
   const [address, setAddress] = useState("");
+  const confirm = useConfirm();
+
+  const deleteProject = async (p: typeof projects[0]) => {
+    const ok = await confirm({
+      title: "Delete this project?",
+      message: `"${p.name}" and all its site visits, items, and photos will be permanently removed. This can't be undone.`,
+      confirmLabel: "Delete project",
+      tone: "destructive",
+    });
+    if (!ok) return;
+    try {
+      await projectsApi.delete(p.id);
+      setProjects(projects.filter((x) => x.id !== p.id));
+      showToast("Project deleted");
+    } catch (err: any) {
+      showToast(err.message || "Failed to delete project");
+    }
+  };
 
   // Fetch projects on mount
   useEffect(() => {
@@ -137,11 +156,20 @@ export default function ProjectsScreen() {
                   <h3 className="text-[15px] font-semibold truncate">{p.name}</h3>
                   <p className="text-xs text-[var(--text3)] mt-0.5">{p.client || "—"}</p>
                 </div>
-                {p.snag_count > 0 && (
-                  <span className="text-[11px] font-semibold text-red-400 bg-red-400/10 px-2.5 py-0.5 rounded-full">
-                    {p.snag_count} items
-                  </span>
-                )}
+                <div className="flex items-center gap-2">
+                  {p.snag_count > 0 && (
+                    <span className="text-[11px] font-semibold text-red-400 bg-red-400/10 px-2.5 py-0.5 rounded-full">
+                      {p.snag_count} items
+                    </span>
+                  )}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); deleteProject(p); }}
+                    className="p-1.5 rounded-lg bg-red-400/10 text-red-400 hover:bg-red-400/20 transition-colors"
+                    title="Delete project"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
               <p className="text-[11px] text-[var(--text3)] mt-2.5">
                 Created {new Date(p.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
