@@ -131,7 +131,7 @@ export default function LoginScreen() {
         <div className="animate-slide-up text-center w-full max-w-xs">
           {/* Logo */}
           <div className="w-[72px] h-[72px] rounded-2xl bg-gradient-to-br from-brand to-orange-400 flex items-center justify-center mx-auto mb-5 shadow-lg shadow-brand/30">
-            <ClipboardCheck className="w-11 h-11 text-white" />
+            <ClipboardCheck className="w-14 h-14 text-white" />
           </div>
           <h1 className="text-3xl font-bold mb-1">Welcome to VoxSite</h1>
           <p className="text-[var(--text3)] text-sm mb-2">You've been invited to join a team.</p>
@@ -186,7 +186,7 @@ export default function LoginScreen() {
       <div className="animate-slide-up text-center w-full max-w-xs">
         {/* Logo */}
         <div className="w-[72px] h-[72px] rounded-2xl bg-gradient-to-br from-brand to-orange-400 flex items-center justify-center mx-auto mb-5 shadow-lg shadow-brand/30">
-          <ClipboardCheck className="w-11 h-11 text-white" />
+          <ClipboardCheck className="w-14 h-14 text-white" />
         </div>
         <h1 className="text-3xl font-bold mb-1">VoxSite</h1>
         <p className="text-[var(--text3)] text-sm mb-8">Site inspections, simplified.</p>
