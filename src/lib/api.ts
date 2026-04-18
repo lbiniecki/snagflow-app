@@ -64,6 +64,12 @@ export interface Company {
   member_count?: number;
   is_owner?: boolean;
   created_at: string;
+  // ── Phase 1: report settings ─────────────────────────────────
+  report_brand_colour?: string;              // '#RRGGBB', default '#F97316'
+  report_footer_text?: string | null;
+  report_include_rectification?: boolean;    // default false
+  report_include_cover_page?: boolean;       // default true (Phase 2 will use)
+  report_photos_per_page?: number;           // 1 | 2 | 4, default 2 (Phase 2 will use)
 }
 
 export interface CompanyMember {
@@ -503,7 +509,14 @@ export const companies = {
     });
   },
 
-  update(data: { name?: string }) {
+  update(data: {
+    name?: string;
+    report_brand_colour?: string;
+    report_footer_text?: string | null;
+    report_include_rectification?: boolean;
+    report_include_cover_page?: boolean;
+    report_photos_per_page?: number;
+  }) {
     return apiFetch<Company>("/companies/me", {
       method: "PATCH",
       body: JSON.stringify(data),

@@ -6,7 +6,7 @@ import { companies, profiles } from "@/lib/api";
 import type { Company, CompanyMember } from "@/lib/api";
 import {
   ChevronLeft, Upload, Trash2, UserPlus, X, Building2, Users, Image, User,
-  Clock, Mail,
+  Clock, Mail, FileText,
 } from "lucide-react";
 import BottomNav from "./BottomNav";
 import { useConfirm } from "./ConfirmDialog";
@@ -45,6 +45,17 @@ export default function SettingsScreen() {
   const [profileSaved, setProfileSaved] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
+  // ── Report settings (Phase 1) ─────────────────────────────────
+  // Local form state — seeded from the company record once it loads,
+  // and reset whenever the company record changes. "dirty" lets us
+  // enable the Save button only when something actually changed.
+  const [brandColour, setBrandColour] = useState("#F97316");
+  const [footerText, setFooterText] = useState("");
+  const [includeRectification, setIncludeRectification] = useState(false);
+  const [photosPerPage, setPhotosPerPage] = useState<1 | 2 | 4>(2);
+  const [savingReport, setSavingReport] = useState(false);
+  const [reportSaved, setReportSaved] = useState(false);
+
   const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
   // Helper to get auth headers
@@ -73,6 +84,13 @@ export default function SettingsScreen() {
         setCompany(c);
         if (c) {
           setCompanyName(c.name);
+
+          // Seed report-setting form from company record (Phase 1)
+          setBrandColour(c.report_brand_colour || "#F97316");
+          setFooterText(c.report_footer_text || "");
+          setIncludeRectification(!!c.report_include_rectification);
+          const pp = c.report_photos_per_page;
+          setPhotosPerPage(pp === 1 || pp === 4 ? pp : 2);
 
           // Fetch members (now returns email + full_name from profiles join)
           try {
@@ -142,6 +160,44 @@ export default function SettingsScreen() {
       showToast(err.message);
     }
   };
+
+  // ── Save all report settings in one PATCH (Phase 1) ──
+  // Validates the hex colour client-side because the DB has a CHECK
+  // constraint that will 400 on anything malformed — friendlier to
+  // catch it here with a toast than let the network error bubble.
+  const handleSaveReportSettings = async () => {
+    if (!company) return;
+    const hex = brandColour.trim();
+    if (!/^#[0-9A-Fa-f]{6}$/.test(hex)) {
+      showToast("Brand colour must be a 6-digit hex like #F97316");
+      return;
+    }
+    setSavingReport(true);
+    try {
+      const updated = await companies.update({
+        report_brand_colour: hex,
+        report_footer_text: footerText.trim() || null,
+        report_include_rectification: includeRectification,
+        report_photos_per_page: photosPerPage,
+      });
+      setCompany(updated);
+      setReportSaved(true);
+      showToast("Report settings saved");
+      setTimeout(() => setReportSaved(false), 2000);
+    } catch (err: any) {
+      showToast(err.message || "Failed to save report settings");
+    } finally {
+      setSavingReport(false);
+    }
+  };
+
+  // Detect if form is dirty — enables the Save button only when something changed
+  const reportDirty = !!company && (
+    brandColour !== (company.report_brand_colour || "#F97316") ||
+    footerText !== (company.report_footer_text || "") ||
+    includeRectification !== !!company.report_include_rectification ||
+    photosPerPage !== (company.report_photos_per_page === 1 || company.report_photos_per_page === 4 ? company.report_photos_per_page : 2)
+  );
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -504,6 +560,127 @@ export default function SettingsScreen() {
                 )}
               </div>
             </section>
+
+            {/* Report Settings (Phase 1) — admin-only */}
+            {company.is_owner && (
+              <section>
+                <h3 className="text-xs font-semibold text-[var(--text2)] uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <FileText className="w-4 h-4" /> Report Settings
+                </h3>
+                <div className="bg-[var(--bg2)] border border-[var(--border)] rounded-xl p-4 space-y-4">
+                  <p className="text-[11px] text-[var(--text3)] leading-relaxed">
+                    These settings apply to every PDF report your team generates.
+                  </p>
+
+                  {/* Brand colour */}
+                  <div>
+                    <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">
+                      Brand Colour
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={/^#[0-9A-Fa-f]{6}$/.test(brandColour) ? brandColour : "#F97316"}
+                        onChange={(e) => setBrandColour(e.target.value.toUpperCase())}
+                        className="w-14 h-10 rounded-lg border border-[var(--border)] bg-[var(--bg)] cursor-pointer"
+                        aria-label="Brand colour picker"
+                      />
+                      <input
+                        type="text"
+                        value={brandColour}
+                        onChange={(e) => setBrandColour(e.target.value)}
+                        placeholder="#F97316"
+                        maxLength={7}
+                        className="flex-1 px-3 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors font-mono"
+                      />
+                    </div>
+                    <p className="text-[10px] text-[var(--text3)] mt-1">
+                      Used for headings and the cover-page accent bar on PDF reports.
+                    </p>
+                  </div>
+
+                  {/* Rectification toggle */}
+                  <div className="flex items-start justify-between gap-3 pt-1">
+                    <div className="flex-1 min-w-0">
+                      <label className="text-sm font-medium text-[var(--text-primary)] block">
+                        Include rectification sign-off
+                      </label>
+                      <p className="text-[11px] text-[var(--text3)] mt-0.5 leading-relaxed">
+                        Adds a blank "Rectified on / by / signature" block under each open item for contractors to fill in by hand or in a PDF editor.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIncludeRectification(!includeRectification)}
+                      className={`relative w-11 h-6 rounded-full flex-shrink-0 transition-colors ${
+                        includeRectification ? "bg-brand" : "bg-[var(--bg3)]"
+                      }`}
+                      aria-label="Toggle rectification sign-off"
+                      aria-pressed={includeRectification}
+                    >
+                      <span
+                        className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
+                          includeRectification ? "translate-x-5" : "translate-x-0.5"
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {/* Photos per page (Phase 1 stores; Phase 2 renders) */}
+                  <div>
+                    <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">
+                      Photos per page
+                    </label>
+                    <div className="flex gap-2">
+                      {[1, 2, 4].map((n) => (
+                        <button
+                          key={n}
+                          type="button"
+                          onClick={() => setPhotosPerPage(n as 1 | 2 | 4)}
+                          className={`flex-1 py-2 rounded-lg text-sm font-semibold border transition-all ${
+                            photosPerPage === n
+                              ? "border-brand text-brand bg-brand/10"
+                              : "border-[var(--border)] text-[var(--text2)] bg-[var(--bg)] hover:text-[var(--text-primary)]"
+                          }`}
+                        >
+                          {n}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-[10px] text-[var(--text3)] mt-1">
+                      Saved now — active in the next release.
+                    </p>
+                  </div>
+
+                  {/* Footer text */}
+                  <div>
+                    <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">
+                      Report footer text
+                    </label>
+                    <textarea
+                      value={footerText}
+                      onChange={(e) => setFooterText(e.target.value)}
+                      placeholder="Optional — e.g. standard disclaimers, company registration details, contact block"
+                      rows={3}
+                      maxLength={1000}
+                      className="w-full px-3 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors resize-none leading-relaxed"
+                    />
+                    <p className="text-[10px] text-[var(--text3)] mt-1">
+                      Appears at the bottom of the closing page on every PDF report. Leave blank to omit.
+                    </p>
+                  </div>
+
+                  {/* Save */}
+                  <button
+                    onClick={handleSaveReportSettings}
+                    disabled={!reportDirty || savingReport}
+                    className="w-full py-2.5 bg-brand hover:bg-brand-light text-white text-sm font-semibold rounded-lg transition-all disabled:opacity-40"
+                  >
+                    {savingReport ? "Saving…" : reportSaved ? "Saved!" : "Save report settings"}
+                  </button>
+                </div>
+              </section>
+            )}
 
             {/* Team Members */}
             <section>
