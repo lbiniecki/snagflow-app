@@ -160,13 +160,13 @@ export default function ProjectsScreen() {
                 </div>
                 <div className="flex items-center gap-2">
                   {p.snag_count > 0 && (
-                   <span className="text-[11px] font-semibold text-white bg-info/10 px-2.5 py-0.5 rounded-full">
+                    <span className="text-[11px] font-semibold text-info bg-info/10 px-2.5 py-0.5 rounded-full">
                       {p.snag_count} items
                     </span>
                   )}
                   <button
                     onClick={(e) => { e.stopPropagation(); deleteProject(p); }}
-                    className="p-1.5 rounded-lg text-white hover:bg-white/10 transition-colors"
+                    className="p-1.5 rounded-lg bg-critical/10 text-critical hover:bg-critical/20 transition-colors"
                     title="Delete project"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -214,7 +214,7 @@ export default function ProjectsScreen() {
                       const el = e.currentTarget;
                       setTimeout(() => el.scrollIntoView({ block: "center", behavior: "smooth" }), 300);
                     }}
-                    className="w-full px-3.5 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
+                    className="w-full px-3.5 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
                   />
                 </div>
                 <div>
@@ -224,7 +224,7 @@ export default function ProjectsScreen() {
                       const el = e.currentTarget;
                       setTimeout(() => el.scrollIntoView({ block: "center", behavior: "smooth" }), 300);
                     }}
-                    className="w-full px-3.5 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
+                    className="w-full px-3.5 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
                   />
                 </div>
                 <div>
@@ -234,7 +234,7 @@ export default function ProjectsScreen() {
                       const el = e.currentTarget;
                       setTimeout(() => el.scrollIntoView({ block: "center", behavior: "smooth" }), 300);
                     }}
-                    className="w-full px-3.5 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
+                    className="w-full px-3.5 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
                   />
                 </div>
               </div>

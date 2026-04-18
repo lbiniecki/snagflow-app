@@ -234,7 +234,7 @@ export default function CaptureScreen() {
                     </button>
                     <button
                       onClick={() => galleryRef.current?.click()}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--surface)] text-[var(--text2)] text-xs font-semibold hover:text-white transition-colors"
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--surface)] text-[var(--text2)] text-xs font-semibold hover:text-[var(--text-primary)] transition-colors"
                     >
                       <ImageIcon className="w-4 h-4" />
                       From Gallery
@@ -272,7 +272,7 @@ export default function CaptureScreen() {
               onChange={(e) => setNote(e.target.value)}
               placeholder="Describe the item… or tap the mic to dictate"
               rows={4}
-              className="flex-1 px-3.5 py-3 bg-[var(--bg2)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors resize-none leading-relaxed"
+              className="flex-1 px-3.5 py-3 bg-[var(--bg2)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors resize-none leading-relaxed"
             />
             <button
               onClick={() => handleMic("note", setNote)}
@@ -281,7 +281,7 @@ export default function CaptureScreen() {
                 "w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 transition-all",
                 isRecording && micTarget === "note"
                   ? "bg-critical text-white animate-recording"
-                  : "bg-[var(--surface)] text-[var(--text2)] hover:text-white hover:bg-[var(--bg3)]",
+                  : "bg-[var(--surface)] text-[var(--text2)] hover:text-[var(--text-primary)] hover:bg-[var(--bg3)]",
                 !isOnline && "opacity-30"
               )}
               title={!isOnline ? "Voice requires connection" : ""}
@@ -308,7 +308,7 @@ export default function CaptureScreen() {
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               placeholder="e.g. Unit 3 – Kitchen"
-              className="flex-1 px-3.5 py-3 bg-[var(--bg2)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
+              className="flex-1 px-3.5 py-3 bg-[var(--bg2)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
             />
             <button
               onClick={() => handleMic("location", setLocation)}
@@ -317,7 +317,7 @@ export default function CaptureScreen() {
                 "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all",
                 isRecording && micTarget === "location"
                   ? "bg-critical text-white animate-recording"
-                  : "bg-[var(--surface)] text-[var(--text2)] hover:text-white hover:bg-[var(--bg3)]",
+                  : "bg-[var(--surface)] text-[var(--text2)] hover:text-[var(--text-primary)] hover:bg-[var(--bg3)]",
                 !isOnline && "opacity-30"
               )}
             >

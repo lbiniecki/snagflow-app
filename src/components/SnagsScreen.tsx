@@ -503,7 +503,7 @@ export default function SnagsScreen() {
                 <div className="flex items-center gap-2">
                   <WifiOff className="w-4 h-4 text-warning flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-white truncate">{p.note}</p>
+                    <p className="text-sm text-[var(--text-primary)] truncate">{p.note}</p>
                     <p className="text-[10px] text-[var(--text3)]">
                       {p.location || "No location"} • {p.photos.length} photo{p.photos.length !== 1 ? "s" : ""} • {p.status}
                     </p>
@@ -587,7 +587,7 @@ export default function SnagsScreen() {
                   onClick={() => toggleStatus(s.id, s.status)}
                   className={clsx(
                     "flex-1 py-2 rounded-lg text-xs font-semibold transition-all",
-                    s.status === "open" ? "bg-brand text-white" : "bg-[var(--surface)] text-white border border-[var(--border)]"
+                    s.status === "open" ? "bg-brand text-white" : "bg-[var(--surface)] text-[var(--text-primary)] border border-[var(--border)]"
                   )}
                 >
                   {s.status === "open" ? "Close" : "Reopen"}
@@ -605,16 +605,16 @@ export default function SnagsScreen() {
                 {s.photo_url && (
                   <button
                     onClick={() => savePhoto(s.photo_url!, { snagDate: s.created_at, photoNo: 1, itemNo: s.snag_no })}
-                    className="p-2 rounded-lg bg-[var(--surface)] text-[var(--text2)] hover:text-white transition-colors"
+                    className="p-2 rounded-lg bg-[var(--surface)] text-[var(--text2)] hover:text-[var(--text-primary)] transition-colors"
                     title="Save photo"
                   >
                     <Download className="w-4 h-4" />
                   </button>
                 )}
-                <button onClick={() => openEdit(s)} className="p-2 rounded-lg bg-[var(--surface)] text-[var(--text2)] hover:text-white transition-colors">
+                <button onClick={() => openEdit(s)} className="p-2 rounded-lg bg-[var(--surface)] text-[var(--text2)] hover:text-[var(--text-primary)] transition-colors">
                   <Pencil className="w-4 h-4" />
                 </button>
-               <button onClick={() => deleteSnag(s)} className="p-2 rounded-lg text-white hover:bg-white/10 transition-colors" title="Delete item">
+                <button onClick={() => deleteSnag(s)} className="p-2 rounded-lg bg-critical/10 text-critical hover:bg-critical/20 transition-colors" title="Delete item">
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
@@ -643,7 +643,7 @@ export default function SnagsScreen() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setShowEmailModal(true)}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-[var(--surface)] text-white rounded-lg text-xs font-semibold hover:bg-[var(--bg3)]"
+                  className="flex items-center gap-1.5 px-3 py-2 bg-[var(--surface)] text-[var(--text-primary)] rounded-lg text-xs font-semibold hover:bg-[var(--bg3)]"
                   title="Email this report"
                 >
                   <Mail className="w-3.5 h-3.5" />
@@ -669,7 +669,7 @@ export default function SnagsScreen() {
                     value={visitNo}
                     onChange={(e) => setVisitNo(e.target.value)}
                     placeholder="e.g. 1 or 2026/04/13"
-                    className="flex-1 px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
+                    className="flex-1 px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
                   />
                   <button
                     onClick={() => handleReportMic("visitNo", setVisitNo)}
@@ -678,7 +678,7 @@ export default function SnagsScreen() {
                       "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all",
                       isRecording && reportMicTarget === "visitNo"
                         ? "bg-critical text-white animate-recording"
-                        : "bg-[var(--surface)] text-[var(--text2)] hover:text-white hover:bg-[var(--bg3)]"
+                        : "bg-[var(--surface)] text-[var(--text2)] hover:text-[var(--text-primary)] hover:bg-[var(--bg3)]"
                     )}
                   >
                     <Mic className="w-4 h-4" />
@@ -695,7 +695,7 @@ export default function SnagsScreen() {
                     value={weather}
                     onChange={(e) => setWeather(e.target.value)}
                     placeholder="e.g. Sunny, 18°C, light wind"
-                    className="flex-1 px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
+                    className="flex-1 px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
                   />
                   <button
                     onClick={() => handleReportMic("weather", setWeather)}
@@ -704,7 +704,7 @@ export default function SnagsScreen() {
                       "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all",
                       isRecording && reportMicTarget === "weather"
                         ? "bg-critical text-white animate-recording"
-                        : "bg-[var(--surface)] text-[var(--text2)] hover:text-white hover:bg-[var(--bg3)]"
+                        : "bg-[var(--surface)] text-[var(--text2)] hover:text-[var(--text-primary)] hover:bg-[var(--bg3)]"
                     )}
                   >
                     <Mic className="w-4 h-4" />
@@ -806,13 +806,13 @@ export default function SnagsScreen() {
               <div>
                 <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">Description</label>
                 <textarea value={editNote} onChange={(e) => setEditNote(e.target.value)} rows={3}
-                  className="w-full px-3.5 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors resize-none"
+                  className="w-full px-3.5 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors resize-none"
                 />
               </div>
               <div>
                 <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">Location</label>
                 <input value={editLoc} onChange={(e) => setEditLoc(e.target.value)}
-                  className="w-full px-3.5 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
+                  className="w-full px-3.5 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
                 />
               </div>
               <div>
@@ -955,14 +955,14 @@ export default function SnagsScreen() {
                       />
                       <label
                         htmlFor="edit-photo-camera"
-                        className="flex-1 flex items-center justify-center gap-1.5 h-11 border border-dashed border-[var(--border)] rounded-lg text-xs font-semibold text-[var(--text2)] hover:text-white hover:border-brand transition-colors cursor-pointer"
+                        className="flex-1 flex items-center justify-center gap-1.5 h-11 border border-dashed border-[var(--border)] rounded-lg text-xs font-semibold text-[var(--text2)] hover:text-[var(--text-primary)] hover:border-brand transition-colors cursor-pointer"
                       >
                         <Camera className="w-4 h-4" />
                         Take Photo
                       </label>
                       <label
                         htmlFor="edit-photo-gallery"
-                        className="flex-1 flex items-center justify-center gap-1.5 h-11 border border-dashed border-[var(--border)] rounded-lg text-xs font-semibold text-[var(--text2)] hover:text-white hover:border-brand transition-colors cursor-pointer"
+                        className="flex-1 flex items-center justify-center gap-1.5 h-11 border border-dashed border-[var(--border)] rounded-lg text-xs font-semibold text-[var(--text2)] hover:text-[var(--text-primary)] hover:border-brand transition-colors cursor-pointer"
                       >
                         <ImageIcon className="w-4 h-4" />
                         Gallery
@@ -1017,7 +1017,7 @@ export default function SnagsScreen() {
 
             <p className="text-[12px] text-[var(--text3)] mb-4">
               Send the PDF report for{" "}
-              <span className="text-white font-semibold">
+              <span className="text-[var(--text-primary)] font-semibold">
                 {currentProject?.name}
               </span>
               {currentVisit && ` · Visit ${currentVisit.visit_no}`}
@@ -1035,7 +1035,7 @@ export default function SnagsScreen() {
                 placeholder="email@example.com, another@example.com"
                 rows={2}
                 disabled={sendingEmail}
-                className="w-full px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors resize-none"
+                className="w-full px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors resize-none"
               />
               <p className="text-[10px] text-[var(--text3)] mt-1">
                 Separate multiple addresses with commas, spaces, or new lines. Up to 10 recipients.
@@ -1054,7 +1054,7 @@ export default function SnagsScreen() {
                 rows={3}
                 maxLength={2000}
                 disabled={sendingEmail}
-                className="w-full px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors resize-none"
+                className="w-full px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors resize-none"
               />
             </div>
 
@@ -1071,7 +1071,7 @@ export default function SnagsScreen() {
               <button
                 onClick={() => setShowEmailModal(false)}
                 disabled={sendingEmail}
-                className="flex-1 h-11 bg-[var(--surface)] hover:bg-[var(--bg3)] text-white font-semibold rounded-lg transition-all disabled:opacity-50"
+                className="flex-1 h-11 bg-[var(--surface)] hover:bg-[var(--bg3)] text-[var(--text-primary)] font-semibold rounded-lg transition-all disabled:opacity-50"
               >
                 Cancel
               </button>
