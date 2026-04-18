@@ -4,20 +4,103 @@
 
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500&display=swap');
 
+/* ─────────────────────────────────────────────────────────────
+   VoxSite Design Tokens  —  April 2026
+   Paste this block in place of your current :root { ... } block
+   in frontend/src/styles/globals.css. Leave Tailwind @directives,
+   body styles, animations (slide-up, fade-in, recording), etc.
+   alone.
+   ───────────────────────────────────────────────────────────── */
+
 :root {
-  --brand: #FF6B35;
-  --brand-light: #FF8C5A;
-  --bg: #0C0C0E;
-  --bg2: #141418;
-  --bg3: #1C1C22;
-  --surface: #222230;
-  --border: #2A2A3A;
-  --text: #F0F0F4;
-  --text2: #A0A0B4;
-  --text3: #6A6A80;
-  --red: #EF4444;
-  --green: #22C55E;
-  --yellow: #F59E0B;
+  /* ── Semantic palette (theme-independent) ─────────────────── */
+  --color-primary:       #F97316;
+  --color-primary-hover: #EA580C;
+  --color-info:          #2563EB;
+  --color-info-bg:       rgba(37, 99, 235, 0.12);
+  --color-success:       #16A34A;
+  --color-success-bg:    rgba(22, 163, 74, 0.12);
+  --color-warning:       #D97706;
+  --color-warning-bg:    rgba(217, 119, 6, 0.15);
+  --color-critical:      #DC2626;
+  --color-critical-bg:   rgba(220, 38, 38, 0.12);
+
+  /* ── Nav inactive (sunlight-readable in both themes) ──────── */
+  --nav-inactive:        #64748B;
+
+  /* ── Dark theme (default) ─────────────────────────────────── */
+  color-scheme: dark;
+  --bg:              #0F172A;
+  --card:            #1E293B;
+  --card-hover:      #273449;
+  --border:          #334155;
+  --text-primary:    #F1F5F9;
+  --text-secondary:  #94A3B8;
+  --text-muted:      #64748B;
+  --fab-shadow:      0 6px 16px rgba(0, 0, 0, 0.6);
+
+  /* ── Backward-compat aliases (keeps existing classes working) */
+  --brand:       var(--color-primary);
+  --brand-light: #FB923C;
+  --bg2:         var(--card);
+  --bg3:         var(--card-hover);
+  --surface:     var(--card);
+  --text:        var(--text-primary);
+  --text2:       var(--text-secondary);
+  --text3:       var(--text-muted);
+  --red:         var(--color-critical);
+  --green:       var(--color-success);
+  --yellow:      var(--color-warning);
+}
+
+/* ── Light theme: auto via OS preference ────────────────────── */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    color-scheme: light;
+    --bg:             #F8FAFC;
+    --card:           #FFFFFF;
+    --card-hover:     #F1F5F9;
+    --border:         #E2E8F0;
+    --text-primary:   #0F172A;
+    --text-secondary: #475569;
+    --text-muted:     #64748B;
+    --fab-shadow:     0 6px 16px rgba(0, 0, 0, 0.2);
+
+    /* Slightly lighter tints on white backgrounds */
+    --color-info-bg:     rgba(37, 99, 235, 0.10);
+    --color-success-bg:  rgba(22, 163, 74, 0.10);
+    --color-warning-bg:  rgba(217, 119, 6, 0.12);
+    --color-critical-bg: rgba(220, 38, 38, 0.10);
+  }
+}
+
+/* ── Manual overrides (wire up a Settings toggle later) ─────── */
+[data-theme="light"] {
+  color-scheme: light;
+  --bg:             #F8FAFC;
+  --card:           #FFFFFF;
+  --card-hover:     #F1F5F9;
+  --border:         #E2E8F0;
+  --text-primary:   #0F172A;
+  --text-secondary: #475569;
+  --text-muted:     #64748B;
+  --fab-shadow:     0 6px 16px rgba(0, 0, 0, 0.2);
+  --color-info-bg:     rgba(37, 99, 235, 0.10);
+  --color-success-bg:  rgba(22, 163, 74, 0.10);
+  --color-warning-bg:  rgba(217, 119, 6, 0.12);
+  --color-critical-bg: rgba(220, 38, 38, 0.10);
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg:             #0F172A;
+  --card:           #1E293B;
+  --card-hover:     #273449;
+  --border:         #334155;
+  --text-primary:   #F1F5F9;
+  --text-secondary: #94A3B8;
+  --text-muted:     #64748B;
+  --fab-shadow:     0 6px 16px rgba(0, 0, 0, 0.6);
 }
 
 html, body {
