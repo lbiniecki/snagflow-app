@@ -127,7 +127,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
             <div className="flex gap-2">
               <button
                 onClick={() => resolve(false)}
-                className="flex-1 h-11 bg-[var(--surface)] hover:bg-[var(--bg3)] text-white font-semibold rounded-lg transition-colors"
+                className="flex-1 h-11 bg-[var(--surface)] hover:bg-[var(--bg3)] text-[var(--text-primary)] font-semibold rounded-lg transition-colors"
               >
                 {cancelLabel}
               </button>
@@ -137,7 +137,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
                 className={clsx(
                   "flex-1 h-11 text-white font-semibold rounded-lg transition-colors",
                   isDestructive
-                    ? "bg-red-500 hover:bg-red-600"
+                    ? "bg-critical hover:bg-critical/90"
                     : "bg-brand hover:bg-brand-light"
                 )}
               >

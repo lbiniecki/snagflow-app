@@ -18,10 +18,10 @@ export default function OfflineBanner() {
       className={clsx(
         "fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] z-[60] px-4 py-2 flex items-center gap-2 text-xs font-semibold transition-all",
         !isOnline
-          ? "bg-red-500/90 text-white"
+          ? "bg-warning/90 text-white"
           : syncing
           ? "bg-brand/90 text-white"
-          : "bg-yellow-500/90 text-black"
+          : "bg-warning/90 text-white"
       )}
     >
       {!isOnline ? (

@@ -190,7 +190,7 @@ export default function PricingScreen() {
           <span
             className={clsx(
               "text-xs font-semibold",
-              !annual ? "text-white" : "text-[var(--text3)]"
+              !annual ? "text-[var(--text-primary)]" : "text-[var(--text3)]"
             )}
           >
             Monthly
@@ -213,10 +213,10 @@ export default function PricingScreen() {
           <span
             className={clsx(
               "text-xs font-semibold",
-              annual ? "text-white" : "text-[var(--text3)]"
+              annual ? "text-[var(--text-primary)]" : "text-[var(--text3)]"
             )}
           >
-            Annual <span className="text-green-400 text-[10px]">Save 17%</span>
+            Annual <span className="text-success text-[10px]">Save 17%</span>
           </span>
         </div>
 
@@ -276,7 +276,7 @@ export default function PricingScreen() {
                       key={f}
                       className="text-[10px] text-[var(--text2)] flex items-center gap-1"
                     >
-                      <Check className="w-3 h-3 text-green-400" /> {f}
+                      <Check className="w-3 h-3 text-success" /> {f}
                     </span>
                   ))}
                 </div>
@@ -297,7 +297,7 @@ export default function PricingScreen() {
                       "w-full py-2.5 rounded-lg text-xs font-semibold transition-all",
                       plan.popular
                         ? "bg-brand text-white hover:bg-brand-light"
-                        : "bg-[var(--surface)] text-white hover:bg-[var(--bg3)]",
+                        : "bg-[var(--surface)] text-[var(--text-primary)] hover:bg-[var(--bg3)]",
                       isLoading && "opacity-50"
                     )}
                   >
@@ -368,7 +368,7 @@ export default function PricingScreen() {
                         className={clsx(
                           "text-left py-2 pr-2 sticky left-0 bg-[var(--bg)] border-t border-[var(--border)]",
                           row.highlight
-                            ? "text-white font-semibold"
+                            ? "text-[var(--text-primary)] font-semibold"
                             : "text-[var(--text2)]"
                         )}
                       >
@@ -380,7 +380,7 @@ export default function PricingScreen() {
                           className="text-center py-2 px-2 border-t border-[var(--border)]"
                         >
                           {v ? (
-                            <Check className="w-3.5 h-3.5 text-green-400 inline" />
+                            <Check className="w-3.5 h-3.5 text-success inline" />
                           ) : (
                             <X className="w-3.5 h-3.5 text-[var(--text3)] inline" />
                           )}
@@ -390,7 +390,7 @@ export default function PricingScreen() {
                   ))}
                   {/* Watermark row — inverse logic (present on Free = downside) */}
                   <tr>
-                    <td className="text-left py-2 pr-2 text-white font-semibold sticky left-0 bg-[var(--bg)] border-t border-[var(--border)]">
+                    <td className="text-left py-2 pr-2 text-[var(--text-primary)] font-semibold sticky left-0 bg-[var(--bg)] border-t border-[var(--border)]">
                       {WATERMARK_ROW.label}
                     </td>
                     {WATERMARK_ROW.values.map((v, i) => (
