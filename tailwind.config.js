@@ -13,7 +13,7 @@ module.exports = {
         },
         // Semantic palette (theme-independent). Usable with opacity modifiers:
         //   bg-info/10, text-warning, border-l-critical, etc.
-        info:     "#2563EB",   // informational counts (Total Items)
+        info:     "#3B82F6",   // informational counts (Total Items)
         success:  "#16A34A",   // completed / closed
         warning:  "#D97706",   // open / in-progress / offline
         critical: "#DC2626",   // destructive actions, errors, high priority

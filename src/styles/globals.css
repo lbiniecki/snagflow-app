@@ -6,18 +6,16 @@
 
 /* ─────────────────────────────────────────────────────────────
    VoxSite Design Tokens  —  April 2026
-   Paste this block in place of your current :root { ... } block
-   in frontend/src/styles/globals.css. Leave Tailwind @directives,
-   body styles, animations (slide-up, fade-in, recording), etc.
-   alone.
+   Neutral zinc palette (not slate) for OLED-friendly dark mode
+   and a warmer, less blue-cast feel overall.
    ───────────────────────────────────────────────────────────── */
 
 :root {
   /* ── Semantic palette (theme-independent) ─────────────────── */
   --color-primary:       #F97316;
   --color-primary-hover: #EA580C;
-  --color-info:          #2563EB;
-  --color-info-bg:       rgba(37, 99, 235, 0.12);
+  --color-info:          #3B82F6;
+  --color-info-bg:       rgba(59, 130, 246, 0.12);
   --color-success:       #16A34A;
   --color-success-bg:    rgba(22, 163, 74, 0.12);
   --color-warning:       #D97706;
@@ -26,18 +24,18 @@
   --color-critical-bg:   rgba(220, 38, 38, 0.12);
 
   /* ── Nav inactive (sunlight-readable in both themes) ──────── */
-  --nav-inactive:        #64748B;
+  --nav-inactive:        #71717A;
 
-  /* ── Dark theme (default) ─────────────────────────────────── */
+  /* ── Dark theme (default) — neutral zinc, OLED-friendly ───── */
   color-scheme: dark;
-  --bg:              #0F172A;
-  --card:            #1E293B;
-  --card-hover:      #273449;
-  --border:          #334155;
-  --text-primary:    #F1F5F9;
-  --text-secondary:  #94A3B8;
-  --text-muted:      #64748B;
-  --fab-shadow:      0 6px 16px rgba(0, 0, 0, 0.6);
+  --bg:              #09090B;
+  --card:            #1C1C1F;
+  --card-hover:      #27272A;
+  --border:          #3F3F46;
+  --text-primary:    #FAFAFA;
+  --text-secondary:  #A1A1AA;
+  --text-muted:      #71717A;
+  --fab-shadow:      0 8px 20px rgba(0, 0, 0, 0.7);
 
   /* ── Backward-compat aliases (keeps existing classes working) */
   --brand:       var(--color-primary);
@@ -57,17 +55,16 @@
 @media (prefers-color-scheme: light) {
   :root:not([data-theme="dark"]) {
     color-scheme: light;
-    --bg:             #F8FAFC;
+    --bg:             #FAFAFA;
     --card:           #FFFFFF;
-    --card-hover:     #F1F5F9;
-    --border:         #E2E8F0;
-    --text-primary:   #0F172A;
-    --text-secondary: #475569;
-    --text-muted:     #64748B;
+    --card-hover:     #F4F4F5;
+    --border:         #E4E4E7;
+    --text-primary:   #18181B;
+    --text-secondary: #52525B;
+    --text-muted:     #71717A;
     --fab-shadow:     0 6px 16px rgba(0, 0, 0, 0.2);
 
-    /* Slightly lighter tints on white backgrounds */
-    --color-info-bg:     rgba(37, 99, 235, 0.10);
+    --color-info-bg:     rgba(59, 130, 246, 0.10);
     --color-success-bg:  rgba(22, 163, 74, 0.10);
     --color-warning-bg:  rgba(217, 119, 6, 0.12);
     --color-critical-bg: rgba(220, 38, 38, 0.10);
@@ -77,15 +74,15 @@
 /* ── Manual overrides (wire up a Settings toggle later) ─────── */
 [data-theme="light"] {
   color-scheme: light;
-  --bg:             #F8FAFC;
+  --bg:             #FAFAFA;
   --card:           #FFFFFF;
-  --card-hover:     #F1F5F9;
-  --border:         #E2E8F0;
-  --text-primary:   #0F172A;
-  --text-secondary: #475569;
-  --text-muted:     #64748B;
+  --card-hover:     #F4F4F5;
+  --border:         #E4E4E7;
+  --text-primary:   #18181B;
+  --text-secondary: #52525B;
+  --text-muted:     #71717A;
   --fab-shadow:     0 6px 16px rgba(0, 0, 0, 0.2);
-  --color-info-bg:     rgba(37, 99, 235, 0.10);
+  --color-info-bg:     rgba(59, 130, 246, 0.10);
   --color-success-bg:  rgba(22, 163, 74, 0.10);
   --color-warning-bg:  rgba(217, 119, 6, 0.12);
   --color-critical-bg: rgba(220, 38, 38, 0.10);
@@ -93,14 +90,14 @@
 
 [data-theme="dark"] {
   color-scheme: dark;
-  --bg:             #0F172A;
-  --card:           #1E293B;
-  --card-hover:     #273449;
-  --border:         #334155;
-  --text-primary:   #F1F5F9;
-  --text-secondary: #94A3B8;
-  --text-muted:     #64748B;
-  --fab-shadow:     0 6px 16px rgba(0, 0, 0, 0.6);
+  --bg:             #09090B;
+  --card:           #1C1C1F;
+  --card-hover:     #27272A;
+  --border:         #3F3F46;
+  --text-primary:   #FAFAFA;
+  --text-secondary: #A1A1AA;
+  --text-muted:     #71717A;
+  --fab-shadow:     0 8px 20px rgba(0, 0, 0, 0.7);
 }
 
 html, body {
