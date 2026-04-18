@@ -449,7 +449,7 @@ export default function SnagsScreen() {
           <ChevronLeft className="w-5 h-5" />
         </button>
         <div className="flex-1 text-center min-w-0">
-          <h2 className="text-base font-semibold truncate">
+          <h2 className="text-base font-semibold truncate text-[var(--text-primary)]">
             {currentVisit ? `Visit #${currentVisit.visit_no}` : currentProject?.name}
           </h2>
           <p className="text-[11px] text-[var(--text3)]">
@@ -564,7 +564,7 @@ export default function SnagsScreen() {
                 )}
 
                 <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-medium leading-snug mb-1.5">{s.note}</p>
+                  <p className="text-[13px] font-medium leading-snug mb-1.5 text-[var(--text-primary)]">{s.note}</p>
                   <div className="flex flex-wrap gap-1.5">
                     <span className={clsx("text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase", STATUS_COLORS[s.status])}>
                       {s.status}
@@ -639,7 +639,7 @@ export default function SnagsScreen() {
           <div className="w-full max-w-[480px] max-h-[90vh] bg-[var(--bg2)] rounded-t-2xl p-5 overflow-y-auto animate-slide-up" onClick={(e) => e.stopPropagation()}>
             <div className="w-10 h-1 bg-[var(--border)] rounded-full mx-auto mb-4" />
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold">Inspection Report</h3>
+              <h3 className="text-lg font-bold text-[var(--text-primary)]">Inspection Report</h3>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setShowEmailModal(true)}
@@ -794,7 +794,7 @@ export default function SnagsScreen() {
           <div className="w-full max-w-[480px] bg-[var(--bg2)] rounded-t-2xl p-5 animate-slide-up">
             <div className="w-10 h-1 bg-[var(--border)] rounded-full mx-auto mb-4" />
             <div className="flex justify-between items-center mb-5">
-              <h3 className="text-lg font-bold">Edit Item</h3>
+              <h3 className="text-lg font-bold text-[var(--text-primary)]">Edit Item</h3>
               <button
                 onClick={() => { setEditSnag(null); setEditNewPhotos([]); }}
                 className="text-[var(--text3)]"
@@ -1001,7 +1001,7 @@ export default function SnagsScreen() {
             <div className="w-10 h-1 bg-[var(--border)] rounded-full mx-auto mb-4" />
 
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold flex items-center gap-2">
+              <h3 className="text-lg font-bold flex items-center gap-2 text-[var(--text-primary)]">
                 <Mail className="w-4 h-4 text-brand" />
                 Email Report
               </h3>

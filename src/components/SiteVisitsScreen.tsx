@@ -179,7 +179,7 @@ export default function SiteVisitsScreen() {
           <ChevronLeft className="w-5 h-5" />
         </button>
         <div className="flex-1 text-center min-w-0">
-          <h2 className="text-base font-semibold truncate">{currentProject?.name}</h2>
+          <h2 className="text-base font-semibold truncate text-[var(--text-primary)]">{currentProject?.name}</h2>
           <p className="text-[11px] text-[var(--text3)]">{currentProject?.client}</p>
         </div>
         <div className="w-9" />
@@ -190,7 +190,7 @@ export default function SiteVisitsScreen() {
         {/* Stats */}
         <div className="grid grid-cols-3 gap-2.5 mb-5 animate-slide-up">
           <div className="bg-[var(--bg2)] border border-[var(--border)] rounded-xl p-3 text-center">
-            <div className="text-xl font-bold font-mono">{visits.length}</div>
+            <div className="text-xl font-bold font-mono text-[var(--text-primary)]">{visits.length}</div>
             <div className="text-[10px] text-[var(--text3)] uppercase tracking-wider mt-0.5">Total Visits</div>
           </div>
           <div className="bg-[var(--bg2)] border border-[var(--border)] rounded-xl p-3 text-center">
@@ -225,7 +225,7 @@ export default function SiteVisitsScreen() {
               >
                 <div className="flex justify-between items-start">
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-[15px] font-semibold">
+                    <h3 className="text-[15px] font-semibold text-[var(--text-primary)]">
                       Site Visit #{v.visit_no}
                     </h3>
                     <div className="flex items-center gap-2 mt-1">
@@ -324,7 +324,7 @@ export default function SiteVisitsScreen() {
           >
             <div className="w-10 h-1 bg-[var(--border)] rounded-full mx-auto mb-4" />
             <div className="flex justify-between items-center mb-5">
-              <h3 className="text-lg font-bold">{editingId ? "Edit Visit" : "New Site Visit"}</h3>
+              <h3 className="text-lg font-bold text-[var(--text-primary)]">{editingId ? "Edit Visit" : "New Site Visit"}</h3>
               <button onClick={() => { setShowModal(false); resetForm(); }} className="text-[var(--text3)]"><X className="w-5 h-5" /></button>
             </div>
 

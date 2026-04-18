@@ -100,7 +100,7 @@ export default function ProjectsScreen() {
       {/* Header */}
       <div className="sticky top-0 z-40 bg-[var(--bg)] border-b border-[var(--border)] px-5 py-3 flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-bold">Projects</h2>
+          <h2 className="text-lg font-bold text-[var(--text-primary)]">Projects</h2>
           <p className="text-xs text-[var(--text3)]">Welcome back{user?.email ? `, ${user.email.split("@")[0]}` : ""}</p>
         </div>
         <div className="flex items-center gap-1">
@@ -122,7 +122,7 @@ export default function ProjectsScreen() {
         {/* Stats */}
         <div className="grid grid-cols-3 gap-2.5 mb-5 animate-slide-up">
           <div className="bg-[var(--bg2)] border border-[var(--border)] rounded-xl p-3.5 text-center">
-            <div className="text-2xl font-bold font-mono">{projects.length}</div>
+            <div className="text-2xl font-bold font-mono text-[var(--text-primary)]">{projects.length}</div>
             <div className="text-[10px] text-[var(--text3)] uppercase tracking-wider mt-1">Projects</div>
           </div>
           <div className="bg-[var(--bg2)] border border-[var(--border)] rounded-xl p-3.5 text-center">
@@ -155,7 +155,7 @@ export default function ProjectsScreen() {
             >
               <div className="flex justify-between items-start">
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-[15px] font-semibold truncate">{p.name}</h3>
+                  <h3 className="text-[15px] font-semibold truncate text-[var(--text-primary)]">{p.name}</h3>
                   <p className="text-xs text-[var(--text3)] mt-0.5">{p.client || "—"}</p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -202,7 +202,7 @@ export default function ProjectsScreen() {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex justify-between items-center mb-5">
-                <h3 className="text-lg font-bold">New Project</h3>
+                <h3 className="text-lg font-bold text-[var(--text-primary)]">New Project</h3>
                 <button onClick={() => setShowModal(false)} className="text-[var(--text3)]"><X className="w-5 h-5" /></button>
               </div>
 
