@@ -47,10 +47,54 @@ export default function LoginScreen() {
       const hashParams = new URLSearchParams(hash.substring(1));
       const type = hashParams.get("type");
       const accessToken = hashParams.get("access_token");
+
       if (type === "recovery" && accessToken) {
         setResetToken(accessToken);
         setMode("reset");
         window.history.replaceState({}, "", window.location.pathname);
+        return;
+      }
+
+      // Magic-link callback. Supabase returns #access_token=XXX&type=magiclink
+      // once the user clicks the link in the email. The token IS the session
+      // access_token — we just need to store it, hydrate the user, and go.
+      if (type === "magiclink" && accessToken) {
+        (async () => {
+          try {
+            // Clean the URL immediately so a refresh doesn't re-trigger
+            window.history.replaceState({}, "", window.location.pathname);
+
+            // Store token the same way the login flow does
+            setToken(accessToken);
+
+            // Resolve who we are from the token via /auth/me
+            const meRes = await fetch(`${API}/auth/me`, {
+              headers: { Authorization: `Bearer ${accessToken}` },
+            });
+            if (!meRes.ok) throw new Error("Magic link session rejected");
+            const me = await meRes.json();
+            setAuth({ id: me.id, email: me.email }, accessToken);
+
+            // Auto-join any pending invite (same as normal login flow)
+            try {
+              await fetch(`${API}/companies/join`, {
+                method: "POST",
+                headers: {
+                  Authorization: `Bearer ${accessToken}`,
+                  "Content-Type": "application/json",
+                },
+              });
+            } catch {}
+
+            showToast("Signed in");
+            setScreen("projects");
+          } catch (err: any) {
+            setError(
+              err.message ||
+                "Magic link couldn't be verified. Please request a new one."
+            );
+          }
+        })();
         return;
       }
     }
