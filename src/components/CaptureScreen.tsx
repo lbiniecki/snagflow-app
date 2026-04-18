@@ -11,7 +11,7 @@ import { ChevronLeft, Camera, Mic, X, Plus, WifiOff, Image as ImageIcon } from "
 import clsx from "clsx";
 
 const PRIORITY_STYLES = {
-  low: { active: "border-gray-400 text-gray-400 bg-gray-400/10", inactive: "border-[var(--border)] text-[var(--text3)]" },
+  low: { active: "border-slate-500 text-slate-500 bg-slate-500/10", inactive: "border-[var(--border)] text-[var(--text3)]" },
   medium: { active: "border-warning text-warning bg-warning/10", inactive: "border-[var(--border)] text-[var(--text3)]" },
   high: { active: "border-critical text-critical bg-critical/10", inactive: "border-[var(--border)] text-[var(--text3)]" },
 };
@@ -181,7 +181,7 @@ export default function CaptureScreen() {
         <button onClick={() => setScreen("snags")} className="p-2 rounded-full hover:bg-[var(--bg3)] text-[var(--text2)]">
           <ChevronLeft className="w-5 h-5" />
         </button>
-        <h2 className="text-base font-semibold flex-1 text-center">New Item</h2>
+        <h2 className="text-base font-semibold flex-1 text-center text-[var(--text-primary)]">New Item</h2>
         {!isOnline && (
           <span className="flex items-center gap-1 text-[10px] text-warning font-semibold">
             <WifiOff className="w-3.5 h-3.5" /> Offline

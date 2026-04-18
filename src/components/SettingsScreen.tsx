@@ -306,7 +306,7 @@ export default function SettingsScreen() {
         <button onClick={() => setScreen("projects")} className="p-2 rounded-full hover:bg-[var(--bg3)] text-[var(--text2)]">
           <ChevronLeft className="w-5 h-5" />
         </button>
-        <h2 className="text-base font-semibold flex-1 text-center">Settings</h2>
+        <h2 className="text-base font-semibold flex-1 text-center text-[var(--text-primary)]">Settings</h2>
         <div className="w-9" />
       </div>
 
@@ -338,7 +338,7 @@ export default function SettingsScreen() {
 
             <div className="text-center py-8">
               <Building2 className="w-12 h-12 mx-auto mb-4 text-[var(--text3)] opacity-40" />
-              <h3 className="text-lg font-bold mb-1">Set Up Your Company</h3>
+              <h3 className="text-lg font-bold mb-1 text-[var(--text-primary)]">Set Up Your Company</h3>
               <p className="text-sm text-[var(--text3)]">Your company logo will appear on PDF reports</p>
             </div>
 
@@ -526,7 +526,7 @@ export default function SettingsScreen() {
                         {initial}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{display}</p>
+                        <p className="text-sm font-medium truncate text-[var(--text-primary)]">{display}</p>
                         {m.email && m.full_name && (
                           <p className="text-[10px] text-[var(--text3)] truncate">{m.email}</p>
                         )}
@@ -556,7 +556,7 @@ export default function SettingsScreen() {
                           <Mail className="w-3.5 h-3.5 text-warning" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm truncate">{inv.email}</p>
+                          <p className="text-sm truncate text-[var(--text-primary)]">{inv.email}</p>
                           <div className="flex items-center gap-1.5">
                             <Clock className="w-3 h-3 text-warning" />
                             <span className="text-[10px] text-warning font-semibold uppercase">Pending invite</span>

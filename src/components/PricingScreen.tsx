@@ -180,7 +180,7 @@ export default function PricingScreen() {
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
-        <h2 className="text-base font-semibold flex-1 text-center">Pricing</h2>
+        <h2 className="text-base font-semibold flex-1 text-center text-[var(--text-primary)]">Pricing</h2>
         <div className="w-9" />
       </div>
 
@@ -241,7 +241,7 @@ export default function PricingScreen() {
                 <div className="flex items-center justify-between mb-3">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <h3 className="text-base font-bold">{plan.name}</h3>
+                      <h3 className="text-base font-bold text-[var(--text-primary)]">{plan.name}</h3>
                       {plan.popular && (
                         <span className="text-[9px] font-bold uppercase bg-brand text-white px-2 py-0.5 rounded-full">
                           Popular
@@ -254,15 +254,15 @@ export default function PricingScreen() {
                   </div>
                   <div className="text-right shrink-0">
                     {price === 0 ? (
-                      <span className="text-lg font-bold">Free</span>
+                      <span className="text-lg font-bold text-[var(--text-primary)]">Free</span>
                     ) : annual ? (
                       <>
-                        <span className="text-lg font-bold">€{price}</span>
+                        <span className="text-lg font-bold text-[var(--text-primary)]">€{price}</span>
                         <span className="text-[11px] text-[var(--text3)]">/year</span>
                       </>
                     ) : (
                       <>
-                        <span className="text-lg font-bold">€{price}</span>
+                        <span className="text-lg font-bold text-[var(--text-primary)]">€{price}</span>
                         <span className="text-[11px] text-[var(--text3)]">/mo</span>
                       </>
                     )}
@@ -415,7 +415,7 @@ export default function PricingScreen() {
         {/* Enterprise */}
         <div className="mt-6 text-center border border-[var(--border)] rounded-2xl p-5 bg-[var(--bg2)]">
           <Zap className="w-6 h-6 text-brand mx-auto mb-2" />
-          <h3 className="text-sm font-bold mb-1">Need more than 50 users?</h3>
+          <h3 className="text-sm font-bold mb-1 text-[var(--text-primary)]">Need more than 50 users?</h3>
           <p className="text-[11px] text-[var(--text3)] mb-3">
             Enterprise plan starts at €299+/mo — unlimited everything, dedicated support.
           </p>
