@@ -614,7 +614,7 @@ export default function SnagsScreen() {
                 <button onClick={() => openEdit(s)} className="p-2 rounded-lg bg-[var(--surface)] text-[var(--text2)] hover:text-white transition-colors">
                   <Pencil className="w-4 h-4" />
                 </button>
-                <button onClick={() => deleteSnag(s)} className="p-2 rounded-lg bg-critical/10 text-critical hover:bg-critical/20 transition-colors" title="Delete item">
+               <button onClick={() => deleteSnag(s)} className="p-2 rounded-lg text-white hover:bg-white/10 transition-colors" title="Delete item">
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
