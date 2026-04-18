@@ -4,18 +4,19 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        // Primary brand — updated from #FF6B35 to #F97316 per design spec.
+        // Existing bg-brand / text-brand / bg-brand/10 classes keep working.
         brand: {
-          DEFAULT: "#FF6B35",
-          light: "#FF8C5A",
-          dark: "#E55A25",
-          glow: "rgba(255,107,53,0.15)",
+          DEFAULT: "#F97316",
+          light:   "#FB923C",
+          dark:    "#EA580C",
         },
-        surface: {
-          DEFAULT: "#222230",
-          dark: "#141418",
-          darker: "#0C0C0E",
-          border: "#2A2A3A",
-        },
+        // Semantic palette (theme-independent). Usable with opacity modifiers:
+        //   bg-info/10, text-warning, border-l-critical, etc.
+        info:     "#2563EB",   // informational counts (Total Items)
+        success:  "#16A34A",   // completed / closed
+        warning:  "#D97706",   // open / in-progress / offline
+        critical: "#DC2626",   // destructive actions, errors, high priority
       },
       fontFamily: {
         sans: ["DM Sans", "system-ui", "sans-serif"],

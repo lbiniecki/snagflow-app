@@ -31,7 +31,7 @@ export default function BottomNav({ active }: { active: string }) {
               disabled={disabled}
               className={clsx(
                 "flex-1 flex flex-col items-center gap-1 py-2.5 text-[10px] font-medium transition-colors",
-                active === tab.id ? "text-brand" : "text-[var(--text3)]",
+                active === tab.id ? "text-brand" : "text-[var(--nav-inactive)]",
                 disabled && "opacity-30 cursor-not-allowed"
               )}
             >

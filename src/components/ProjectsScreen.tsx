@@ -126,11 +126,11 @@ export default function ProjectsScreen() {
             <div className="text-[10px] text-[var(--text3)] uppercase tracking-wider mt-1">Projects</div>
           </div>
           <div className="bg-[var(--bg2)] border border-[var(--border)] rounded-xl p-3.5 text-center">
-            <div className="text-2xl font-bold font-mono text-red-400">{totalOpen}</div>
+            <div className="text-2xl font-bold font-mono text-info">{totalOpen}</div>
             <div className="text-[10px] text-[var(--text3)] uppercase tracking-wider mt-1">Total Items</div>
           </div>
           <div className="bg-[var(--bg2)] border border-[var(--border)] rounded-xl p-3.5 text-center">
-            <div className="text-2xl font-bold font-mono text-green-400">0</div>
+            <div className="text-2xl font-bold font-mono text-success">0</div>
             <div className="text-[10px] text-[var(--text3)] uppercase tracking-wider mt-1">Closed</div>
           </div>
         </div>
@@ -148,7 +148,9 @@ export default function ProjectsScreen() {
             <button
               key={p.id}
               onClick={() => openProject(p)}
-              className="w-full text-left bg-[var(--bg2)] border border-[var(--border)] rounded-xl p-4 mb-2.5 hover:border-[var(--border)] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/20 transition-all animate-slide-up"
+              className={`w-full text-left bg-[var(--bg2)] border border-[var(--border)] border-l-4 rounded-xl p-4 mb-2.5 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/20 transition-all animate-slide-up ${
+                p.snag_count > 0 ? "border-l-warning" : "border-l-info"
+              }`}
               style={{ animationDelay: `${i * 50}ms` }}
             >
               <div className="flex justify-between items-start">
@@ -158,13 +160,13 @@ export default function ProjectsScreen() {
                 </div>
                 <div className="flex items-center gap-2">
                   {p.snag_count > 0 && (
-                    <span className="text-[11px] font-semibold text-red-400 bg-red-400/10 px-2.5 py-0.5 rounded-full">
+                    <span className="text-[11px] font-semibold text-info bg-info/10 px-2.5 py-0.5 rounded-full">
                       {p.snag_count} items
                     </span>
                   )}
                   <button
                     onClick={(e) => { e.stopPropagation(); deleteProject(p); }}
-                    className="p-1.5 rounded-lg bg-red-400/10 text-red-400 hover:bg-red-400/20 transition-colors"
+                    className="p-1.5 rounded-lg bg-critical/10 text-critical hover:bg-critical/20 transition-colors"
                     title="Delete project"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -182,7 +184,7 @@ export default function ProjectsScreen() {
       {/* FAB */}
       <button
         onClick={() => setShowModal(true)}
-        className="fixed bottom-24 right-[max(20px,calc((100%-480px)/2+20px))] w-14 h-14 rounded-full bg-brand text-white flex items-center justify-center shadow-lg shadow-brand/40 hover:scale-110 active:scale-95 transition-transform z-40"
+        className="fixed bottom-24 right-[max(20px,calc((100%-480px)/2+20px))] w-14 h-14 rounded-full bg-brand text-white flex items-center justify-center shadow-[var(--fab-shadow)] hover:scale-110 active:scale-95 transition-transform z-40"
       >
         <Plus className="w-6 h-6" />
       </button>

@@ -12,8 +12,8 @@ import clsx from "clsx";
 
 const PRIORITY_STYLES = {
   low: { active: "border-gray-400 text-gray-400 bg-gray-400/10", inactive: "border-[var(--border)] text-[var(--text3)]" },
-  medium: { active: "border-yellow-400 text-yellow-400 bg-yellow-400/10", inactive: "border-[var(--border)] text-[var(--text3)]" },
-  high: { active: "border-red-400 text-red-400 bg-red-400/10", inactive: "border-[var(--border)] text-[var(--text3)]" },
+  medium: { active: "border-warning text-warning bg-warning/10", inactive: "border-[var(--border)] text-[var(--text3)]" },
+  high: { active: "border-critical text-critical bg-critical/10", inactive: "border-[var(--border)] text-[var(--text3)]" },
 };
 
 const MAX_PHOTOS = 4;
@@ -183,7 +183,7 @@ export default function CaptureScreen() {
         </button>
         <h2 className="text-base font-semibold flex-1 text-center">New Item</h2>
         {!isOnline && (
-          <span className="flex items-center gap-1 text-[10px] text-red-400 font-semibold">
+          <span className="flex items-center gap-1 text-[10px] text-warning font-semibold">
             <WifiOff className="w-3.5 h-3.5" /> Offline
           </span>
         )}
@@ -193,8 +193,8 @@ export default function CaptureScreen() {
       <div className="px-5 py-4 pb-8">
         {/* Offline notice */}
         {!isOnline && (
-          <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 mb-4 text-center">
-            <p className="text-xs text-red-400 font-semibold">No connection — item will be saved locally and synced later</p>
+          <div className="bg-warning/10 border border-warning/20 rounded-xl p-3 mb-4 text-center">
+            <p className="text-xs text-warning font-semibold">No connection — item will be saved locally and synced later</p>
           </div>
         )}
 
@@ -280,7 +280,7 @@ export default function CaptureScreen() {
               className={clsx(
                 "w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 transition-all",
                 isRecording && micTarget === "note"
-                  ? "bg-red-500 text-white animate-recording"
+                  ? "bg-critical text-white animate-recording"
                   : "bg-[var(--surface)] text-[var(--text2)] hover:text-white hover:bg-[var(--bg3)]",
                 !isOnline && "opacity-30"
               )}
@@ -290,13 +290,13 @@ export default function CaptureScreen() {
             </button>
           </div>
           {isRecording && micTarget === "note" && (
-            <p className="text-xs text-red-400 font-semibold mt-1.5">● Recording… {secondsLeft}s</p>
+            <p className="text-xs text-critical font-semibold mt-1.5">● Recording… {secondsLeft}s</p>
           )}
           {transcribing && (
             <p className="text-xs text-[var(--text2)] mt-1.5">Transcribing audio…</p>
           )}
           {micError && (
-            <p className="text-xs text-red-400 mt-1.5">{micError}</p>
+            <p className="text-xs text-critical mt-1.5">{micError}</p>
           )}
         </div>
 
@@ -316,7 +316,7 @@ export default function CaptureScreen() {
               className={clsx(
                 "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all",
                 isRecording && micTarget === "location"
-                  ? "bg-red-500 text-white animate-recording"
+                  ? "bg-critical text-white animate-recording"
                   : "bg-[var(--surface)] text-[var(--text2)] hover:text-white hover:bg-[var(--bg3)]",
                 !isOnline && "opacity-30"
               )}
@@ -325,7 +325,7 @@ export default function CaptureScreen() {
             </button>
           </div>
           {isRecording && micTarget === "location" && (
-            <p className="text-xs text-red-400 font-semibold mt-1.5">● Recording… {secondsLeft}s</p>
+            <p className="text-xs text-critical font-semibold mt-1.5">● Recording… {secondsLeft}s</p>
           )}
         </div>
 
