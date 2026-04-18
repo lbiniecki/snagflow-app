@@ -326,9 +326,9 @@ export default function SettingsScreen() {
                 <p className="text-[11px] text-[var(--text3)] mb-3">This name appears as the inspector signature on PDF reports.</p>
                 <div className="flex gap-2 mb-2">
                   <input value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="First name"
-                    className="flex-1 px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors" />
+                    className="flex-1 px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors" />
                   <input value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Last name"
-                    className="flex-1 px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors" />
+                    className="flex-1 px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors" />
                 </div>
                 <button onClick={handleSaveProfile} className="w-full py-2.5 bg-brand text-white text-xs font-semibold rounded-lg transition-all">
                   {profileSaved ? "Saved!" : "Save Name"}
@@ -350,7 +350,7 @@ export default function SettingsScreen() {
                   onChange={(e) => setCompanyName(e.target.value)}
                   placeholder="e.g. Horizon Construction Ltd"
                   autoFocus
-                  className="w-full px-3.5 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
+                  className="w-full px-3.5 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
                 />
               </div>
               <button
@@ -374,9 +374,9 @@ export default function SettingsScreen() {
                 <p className="text-[11px] text-[var(--text3)] mb-3">This name appears as the inspector signature on PDF reports.</p>
                 <div className="flex gap-2 mb-2">
                   <input value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="First name"
-                    className="flex-1 px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors" />
+                    className="flex-1 px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors" />
                   <input value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Last name"
-                    className="flex-1 px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors" />
+                    className="flex-1 px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors" />
                 </div>
                 <button onClick={handleSaveProfile} className="w-full py-2.5 bg-brand text-white text-xs font-semibold rounded-lg transition-all">
                   {profileSaved ? "Saved!" : "Save Name"}
@@ -395,7 +395,7 @@ export default function SettingsScreen() {
                   <input
                     value={companyName}
                     onChange={(e) => setCompanyName(e.target.value)}
-                    className="flex-1 px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-white outline-none focus:border-brand transition-colors"
+                    className="flex-1 px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] outline-none focus:border-brand transition-colors"
                   />
                   <button
                     onClick={handleUpdateName}
@@ -431,12 +431,12 @@ export default function SettingsScreen() {
                         <span className="text-[10px] text-gray-400">Logo</span>
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm text-yellow-400 font-semibold">Logo uploaded but hidden</p>
+                        <p className="text-sm text-warning font-semibold">Logo uploaded but hidden</p>
                         <p className="text-[11px] text-[var(--text3)]">Upgrade to Starter or higher to show your logo on PDF reports.</p>
                       </div>
                       <button
                         onClick={handleDeleteLogo}
-                        className="p-2 rounded-lg bg-red-400/10 text-red-400 hover:bg-red-400/20 transition-colors"
+                        className="p-2 rounded-lg text-[var(--text2)] hover:text-[var(--text-primary)] hover:bg-[var(--bg3)] transition-colors"
                         title="Remove logo"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -448,7 +448,7 @@ export default function SettingsScreen() {
                       <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-brand/15 text-brand mb-3">
                         <Image className="w-5 h-5" />
                       </div>
-                      <p className="text-sm text-white font-semibold mb-1">Company logo is a Starter feature</p>
+                      <p className="text-sm text-[var(--text-primary)] font-semibold mb-1">Company logo is a Starter feature</p>
                       <p className="text-[12px] text-[var(--text3)] mb-3 px-4 leading-relaxed">
                         {company.is_owner
                           ? "Add your logo to PDF reports and remove the VoxSite watermark by upgrading."
@@ -471,20 +471,20 @@ export default function SettingsScreen() {
                       <span className="text-[10px] text-gray-400">Logo</span>
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm text-green-400 font-semibold">Logo uploaded</p>
+                      <p className="text-sm text-success font-semibold">Logo uploaded</p>
                       <p className="text-[11px] text-[var(--text3)]">Appears on PDF report covers and headers</p>
                     </div>
                     <div className="flex gap-2">
                       <button
                         onClick={() => logoInputRef.current?.click()}
-                        className="p-2 rounded-lg bg-[var(--surface)] text-[var(--text2)] hover:text-white transition-colors"
+                        className="p-2 rounded-lg bg-[var(--surface)] text-[var(--text2)] hover:text-[var(--text-primary)] transition-colors"
                         title="Replace logo"
                       >
                         <Upload className="w-4 h-4" />
                       </button>
                       <button
                         onClick={handleDeleteLogo}
-                        className="p-2 rounded-lg bg-red-400/10 text-red-400 hover:bg-red-400/20 transition-colors"
+                        className="p-2 rounded-lg text-[var(--text2)] hover:text-[var(--text-primary)] hover:bg-[var(--bg3)] transition-colors"
                         title="Remove logo"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -498,7 +498,7 @@ export default function SettingsScreen() {
                     className="w-full py-8 border-2 border-dashed border-[var(--border)] rounded-xl text-center hover:border-brand transition-colors group"
                   >
                     <Upload className="w-8 h-8 mx-auto mb-2 text-[var(--text3)] group-hover:text-brand transition-colors" />
-                    <p className="text-sm text-[var(--text2)] group-hover:text-white transition-colors">Upload company logo</p>
+                    <p className="text-sm text-[var(--text2)] group-hover:text-[var(--text-primary)] transition-colors">Upload company logo</p>
                     <p className="text-[11px] text-[var(--text3)] mt-1">PNG or JPEG, max 5MB</p>
                   </button>
                 )}
@@ -538,7 +538,7 @@ export default function SettingsScreen() {
                       {company.is_owner && !isMe && (
                         <button
                           onClick={() => handleRemoveMember(m)}
-                          className="p-1.5 rounded-lg bg-red-400/10 text-red-400 hover:bg-red-400/20 transition-colors"
+                          className="p-1.5 rounded-lg text-[var(--text2)] hover:text-[var(--text-primary)] hover:bg-[var(--bg3)] transition-colors"
                         >
                           <X className="w-3.5 h-3.5" />
                         </button>
@@ -552,20 +552,20 @@ export default function SettingsScreen() {
                   <div className={members.length > 0 ? "mt-2 pt-3 border-t border-[var(--border)]" : ""}>
                     {pendingInvites.map((inv) => (
                       <div key={inv.id} className="flex items-center gap-3 mb-3 last:mb-0">
-                        <div className="w-8 h-8 rounded-full bg-yellow-400/10 flex items-center justify-center">
-                          <Mail className="w-3.5 h-3.5 text-yellow-400" />
+                        <div className="w-8 h-8 rounded-full bg-warning/10 flex items-center justify-center">
+                          <Mail className="w-3.5 h-3.5 text-warning" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm truncate">{inv.email}</p>
                           <div className="flex items-center gap-1.5">
-                            <Clock className="w-3 h-3 text-yellow-400" />
-                            <span className="text-[10px] text-yellow-400 font-semibold uppercase">Pending invite</span>
+                            <Clock className="w-3 h-3 text-warning" />
+                            <span className="text-[10px] text-warning font-semibold uppercase">Pending invite</span>
                           </div>
                         </div>
                         {company.is_owner && (
                           <button
                             onClick={() => handleRevokeInvite(inv)}
-                            className="p-1.5 rounded-lg bg-red-400/10 text-red-400 hover:bg-red-400/20 transition-colors"
+                            className="p-1.5 rounded-lg text-[var(--text2)] hover:text-[var(--text-primary)] hover:bg-[var(--bg3)] transition-colors"
                             title="Revoke invite"
                           >
                             <X className="w-3.5 h-3.5" />
@@ -584,7 +584,7 @@ export default function SettingsScreen() {
                       onChange={(e) => setNewMemberEmail(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && handleAddMember()}
                       placeholder="team@company.com"
-                      className="flex-1 px-3 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
+                      className="flex-1 px-3 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
                     />
                     <button
                       onClick={handleAddMember}

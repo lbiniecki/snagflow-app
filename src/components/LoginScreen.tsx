@@ -11,26 +11,48 @@ export default function LoginScreen() {
   const { setAuth, setScreen, showToast } = useStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [mode, setMode] = useState<"login" | "signup" | "magic" | "setup">("login");
+  const [mode, setMode] = useState<"login" | "signup" | "magic" | "setup" | "forgot" | "reset">("login");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
+  // Extra state for reset-password flow
+  const [resetToken, setResetToken] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
   // One-time setup token from invite link (?setup=TOKEN&email=EMAIL)
   const [setupToken, setSetupToken] = useState("");
 
-  // On mount: detect ?setup= param in URL → switch to setup mode
+  // On mount: detect ?setup= param OR Supabase recovery hash fragment
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
+
+    // Invite flow (existing)
     const token = params.get("setup");
     const inviteEmail = params.get("email");
     if (token && inviteEmail) {
       setSetupToken(token);
       setEmail(decodeURIComponent(inviteEmail));
       setMode("setup");
-      // Clean the URL so refreshing doesn't re-trigger setup
       window.history.replaceState({}, "", window.location.pathname);
+      return;
+    }
+
+    // Password-reset flow. Supabase puts the recovery session in the URL
+    // hash fragment: #access_token=XXX&type=recovery&refresh_token=YYY...
+    // We pluck the access_token and use it to authorize a password update.
+    const hash = window.location.hash || "";
+    if (hash.length > 1) {
+      const hashParams = new URLSearchParams(hash.substring(1));
+      const type = hashParams.get("type");
+      const accessToken = hashParams.get("access_token");
+      if (type === "recovery" && accessToken) {
+        setResetToken(accessToken);
+        setMode("reset");
+        window.history.replaceState({}, "", window.location.pathname);
+        return;
+      }
     }
   }, []);
 
@@ -73,6 +95,86 @@ export default function LoginScreen() {
 
       showToast("Welcome to VoxSite!");
       setScreen("projects");
+    } catch (err: any) {
+      setError(err.message || "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Send a password-reset email. Always resolves success-ish even on
+  // unknown email — we don't want to leak whether an account exists.
+  const handleForgotPassword = async () => {
+    if (!email) return;
+    setLoading(true);
+    setError("");
+    setMessage("");
+    try {
+      const res = await fetch(`${API}/auth/forgot-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      // Even on 4xx (rate limit etc.) we show a neutral message unless
+      // the server returned a specific user-actionable error.
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (res.status === 429) {
+          setError("Too many attempts. Please wait a few minutes and try again.");
+          return;
+        }
+        if (data?.detail && res.status < 500) {
+          setError(data.detail);
+          return;
+        }
+      }
+      setMessage(
+        "If an account exists for that email, a reset link has been sent. Check your inbox (and spam folder).",
+      );
+    } catch (err: any) {
+      setError(err.message || "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Consume the reset token and set a new password.
+  const handleResetPassword = async () => {
+    if (!password || password.length < 6) {
+      setError("Password must be at least 6 characters");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError("Passwords don't match");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch(`${API}/auth/reset-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: resetToken, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "Reset failed");
+
+      // Backend returns an active session (same shape as /login), so we
+      // can sign the user in immediately rather than bouncing them to
+      // the login screen.
+      if (data.access_token) {
+        setToken(data.access_token);
+        setAuth({ id: data.user_id, email: data.email }, data.access_token);
+        showToast("Password updated — you're signed in");
+        setScreen("projects");
+      } else {
+        // Fallback: no session returned, ask them to sign in.
+        setMessage("Password updated. You can now sign in.");
+        setMode("login");
+        setPassword("");
+        setConfirmPassword("");
+        setResetToken("");
+      }
     } catch (err: any) {
       setError(err.message || "Something went wrong");
     } finally {
@@ -151,7 +253,7 @@ export default function LoginScreen() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoFocus
-              className="w-full px-4 py-3 bg-[var(--bg2)] border border-[var(--border)] rounded-lg text-center text-base text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
+              className="w-full px-4 py-3 bg-[var(--bg2)] border border-[var(--border)] rounded-lg text-center text-base text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
               onKeyDown={(e) => e.key === "Enter" && handleSetupAccount()}
             />
           </div>
@@ -165,15 +267,127 @@ export default function LoginScreen() {
           </button>
 
           {error && (
-            <p className="mt-4 text-sm text-red-400 animate-fade-in">{error}</p>
+            <p className="mt-4 text-sm text-critical animate-fade-in">{error}</p>
           )}
 
           {/* Escape hatch */}
           <button
             onClick={() => { setMode("login"); setSetupToken(""); }}
-            className="mt-4 text-xs text-[var(--text3)] hover:text-white transition-colors"
+            className="mt-4 text-xs text-[var(--text3)] hover:text-[var(--text-primary)] transition-colors"
           >
             Already have an account? Sign in instead
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Forgot password: email input + send reset link ──
+  if (mode === "forgot") {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-8">
+        <div className="animate-slide-up text-center w-full max-w-xs">
+          <div className="w-[72px] h-[72px] rounded-2xl bg-gradient-to-br from-brand to-orange-400 flex items-center justify-center mx-auto mb-5 shadow-lg shadow-brand/30">
+            <ClipboardCheck className="w-14 h-14 text-white" />
+          </div>
+          <h1 className="text-3xl font-bold mb-1">Reset password</h1>
+          <p className="text-[var(--text3)] text-sm mb-6">
+            Enter your email and we'll send you a link to set a new password.
+          </p>
+
+          <div className="space-y-3 mb-4">
+            <input
+              type="email"
+              placeholder="you@company.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoFocus
+              className="w-full px-4 py-3 bg-[var(--bg2)] border border-[var(--border)] rounded-lg text-center text-base text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
+              onKeyDown={(e) => e.key === "Enter" && handleForgotPassword()}
+            />
+          </div>
+
+          <button
+            onClick={handleForgotPassword}
+            disabled={loading || !email}
+            className="w-full h-12 bg-brand hover:bg-brand-light text-white font-semibold rounded-lg transition-all disabled:opacity-50"
+          >
+            {loading ? "Sending…" : "Send reset link"}
+          </button>
+
+          {message && (
+            <p className="mt-4 text-sm text-success animate-fade-in">{message}</p>
+          )}
+          {error && (
+            <p className="mt-4 text-sm text-critical animate-fade-in">{error}</p>
+          )}
+
+          <button
+            onClick={() => { setMode("login"); setMessage(""); setError(""); }}
+            className="mt-4 text-xs text-[var(--text3)] hover:text-[var(--text-primary)] transition-colors"
+          >
+            Back to sign in
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Reset password: user arrived via email link with ?reset=TOKEN ──
+  if (mode === "reset") {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-8">
+        <div className="animate-slide-up text-center w-full max-w-xs">
+          <div className="w-[72px] h-[72px] rounded-2xl bg-gradient-to-br from-brand to-orange-400 flex items-center justify-center mx-auto mb-5 shadow-lg shadow-brand/30">
+            <ClipboardCheck className="w-14 h-14 text-white" />
+          </div>
+          <h1 className="text-3xl font-bold mb-1">Set new password</h1>
+          <p className="text-[var(--text3)] text-sm mb-6">
+            Choose a new password for your account.
+          </p>
+
+          <div className="space-y-3 mb-4">
+            <input
+              type="password"
+              placeholder="New password (6+ characters)"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoFocus
+              className="w-full px-4 py-3 bg-[var(--bg2)] border border-[var(--border)] rounded-lg text-center text-base text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
+            />
+            <input
+              type="password"
+              placeholder="Confirm new password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full px-4 py-3 bg-[var(--bg2)] border border-[var(--border)] rounded-lg text-center text-base text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
+              onKeyDown={(e) => e.key === "Enter" && handleResetPassword()}
+            />
+          </div>
+
+          <button
+            onClick={handleResetPassword}
+            disabled={loading || !password || password.length < 6 || password !== confirmPassword}
+            className="w-full h-12 bg-brand hover:bg-brand-light text-white font-semibold rounded-lg transition-all disabled:opacity-50"
+          >
+            {loading ? "Updating…" : "Set new password"}
+          </button>
+
+          {error && (
+            <p className="mt-4 text-sm text-critical animate-fade-in">{error}</p>
+          )}
+
+          <button
+            onClick={() => {
+              setMode("login");
+              setResetToken("");
+              setPassword("");
+              setConfirmPassword("");
+              setError("");
+            }}
+            className="mt-4 text-xs text-[var(--text3)] hover:text-[var(--text-primary)] transition-colors"
+          >
+            Cancel
           </button>
         </div>
       </div>
@@ -198,7 +412,7 @@ export default function LoginScreen() {
             placeholder="you@company.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-4 py-3 bg-[var(--bg2)] border border-[var(--border)] rounded-lg text-center text-base text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
+            className="w-full px-4 py-3 bg-[var(--bg2)] border border-[var(--border)] rounded-lg text-center text-base text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
             onKeyDown={(e) => e.key === "Enter" && handleLogin()}
           />
 
@@ -208,9 +422,21 @@ export default function LoginScreen() {
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 bg-[var(--bg2)] border border-[var(--border)] rounded-lg text-center text-base text-white placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
+              className="w-full px-4 py-3 bg-[var(--bg2)] border border-[var(--border)] rounded-lg text-center text-base text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
               onKeyDown={(e) => e.key === "Enter" && handleLogin()}
             />
+          )}
+
+          {mode === "login" && (
+            <div className="text-right -mt-1">
+              <button
+                onClick={() => { setMode("forgot"); setError(""); setMessage(""); setPassword(""); }}
+                className="text-xs text-[var(--text3)] hover:text-[var(--text-primary)] transition-colors"
+                type="button"
+              >
+                Forgot password?
+              </button>
+            </div>
           )}
         </div>
 
@@ -231,17 +457,17 @@ export default function LoginScreen() {
         {/* Mode switcher */}
         <div className="flex gap-4 justify-center mt-4 text-xs">
           {mode !== "login" && (
-            <button onClick={() => setMode("login")} className="text-[var(--text2)] hover:text-white transition-colors">
+            <button onClick={() => setMode("login")} className="text-[var(--text2)] hover:text-[var(--text-primary)] transition-colors">
               Sign in
             </button>
           )}
           {mode !== "signup" && (
-            <button onClick={() => setMode("signup")} className="text-[var(--text2)] hover:text-white transition-colors">
+            <button onClick={() => setMode("signup")} className="text-[var(--text2)] hover:text-[var(--text-primary)] transition-colors">
               Create account
             </button>
           )}
           {mode !== "magic" && (
-            <button onClick={() => setMode("magic")} className="text-[var(--text2)] hover:text-white transition-colors">
+            <button onClick={() => setMode("magic")} className="text-[var(--text2)] hover:text-[var(--text-primary)] transition-colors">
               Magic link
             </button>
           )}
@@ -249,10 +475,10 @@ export default function LoginScreen() {
 
         {/* Messages */}
         {message && (
-          <p className="mt-4 text-sm text-green-400 animate-fade-in">{message}</p>
+          <p className="mt-4 text-sm text-success animate-fade-in">{message}</p>
         )}
         {error && (
-          <p className="mt-4 text-sm text-red-400 animate-fade-in">{error}</p>
+          <p className="mt-4 text-sm text-critical animate-fade-in">{error}</p>
         )}
       </div>
     </div>
