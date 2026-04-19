@@ -33,6 +33,11 @@ export interface SiteVisit {
   closing_notes: string;
   created_at: string;
   updated_at: string;
+  // Summary counts returned by GET /site-visits (optional on objects
+  // returned by create/update where we don't compute them).
+  snag_count?: number;
+  open_count?: number;
+  closed_count?: number;
 }
 
 export interface Snag {

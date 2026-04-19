@@ -174,6 +174,23 @@ export default function SiteVisitsScreen() {
                 {v.inspector && (
                   <p className="text-[11px] text-[var(--text3)] mt-1.5">Inspector: {v.inspector}</p>
                 )}
+                {/* Item-count pills — only shown when the visit has at least one item.
+                    Each pill is hidden individually if its count is zero, so a visit with
+                    5 open items and no closed ones shows just the amber "5 open" pill. */}
+                {(v.snag_count ?? 0) > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {(v.open_count ?? 0) > 0 && (
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-warning/10 text-warning">
+                        {v.open_count} open
+                      </span>
+                    )}
+                    {(v.closed_count ?? 0) > 0 && (
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-success/10 text-success">
+                        {v.closed_count} closed
+                      </span>
+                    )}
+                  </div>
+                )}
               </button>
 
               {/* Actions */}

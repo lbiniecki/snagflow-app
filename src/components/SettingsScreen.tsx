@@ -382,9 +382,9 @@ export default function SettingsScreen() {
                 <p className="text-[11px] text-[var(--text3)] mb-3">This name appears as the inspector signature on PDF reports.</p>
                 <div className="flex gap-2 mb-2">
                   <input value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="First name"
-                    className="flex-1 px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors" />
+                    className="flex-1 min-w-0 px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors" />
                   <input value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Last name"
-                    className="flex-1 px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors" />
+                    className="flex-1 min-w-0 px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors" />
                 </div>
                 <button onClick={handleSaveProfile} className="w-full py-2.5 bg-brand text-white text-xs font-semibold rounded-lg transition-all">
                   {profileSaved ? "Saved!" : "Save Name"}
@@ -430,9 +430,9 @@ export default function SettingsScreen() {
                 <p className="text-[11px] text-[var(--text3)] mb-3">This name appears as the inspector signature on PDF reports.</p>
                 <div className="flex gap-2 mb-2">
                   <input value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="First name"
-                    className="flex-1 px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors" />
+                    className="flex-1 min-w-0 px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors" />
                   <input value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Last name"
-                    className="flex-1 px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors" />
+                    className="flex-1 min-w-0 px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors" />
                 </div>
                 <button onClick={handleSaveProfile} className="w-full py-2.5 bg-brand text-white text-xs font-semibold rounded-lg transition-all">
                   {profileSaved ? "Saved!" : "Save Name"}
@@ -447,20 +447,29 @@ export default function SettingsScreen() {
               </h3>
               <div className="bg-[var(--bg2)] border border-[var(--border)] rounded-xl p-4">
                 <label className="text-[11px] font-semibold text-[var(--text3)] uppercase tracking-wider block mb-1.5">Name</label>
-                <div className="flex gap-2">
-                  <input
-                    value={companyName}
-                    onChange={(e) => setCompanyName(e.target.value)}
-                    className="flex-1 px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] outline-none focus:border-brand transition-colors"
-                  />
-                  <button
-                    onClick={handleUpdateName}
-                    disabled={companyName === company.name}
-                    className="px-4 py-2.5 bg-brand text-white text-xs font-semibold rounded-lg disabled:opacity-30 transition-all"
-                  >
-                    Save
-                  </button>
-                </div>
+                {company.is_owner ? (
+                  <div className="flex gap-2">
+                    <input
+                      value={companyName}
+                      onChange={(e) => setCompanyName(e.target.value)}
+                      className="flex-1 min-w-0 px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] outline-none focus:border-brand transition-colors"
+                    />
+                    <button
+                      onClick={handleUpdateName}
+                      disabled={companyName === company.name}
+                      className="px-4 py-2.5 bg-brand text-white text-xs font-semibold rounded-lg disabled:opacity-30 transition-all"
+                    >
+                      Save
+                    </button>
+                  </div>
+                ) : (
+                  // Read-only display for non-admin members. Same padding/shape as the
+                  // input so the block has consistent height across roles, with a subtle
+                  // visual cue that it's not interactive.
+                  <div className="px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)]">
+                    {company.name}
+                  </div>
+                )}
 
                 <div className="flex items-center gap-3 mt-3 pt-3 border-t border-[var(--border)]">
                   <span className="text-xs text-[var(--text3)]">Plan:</span>
@@ -471,11 +480,13 @@ export default function SettingsScreen() {
               </div>
             </section>
 
-            {/* Company Logo */}
-            <section>
-              <h3 className="text-xs font-semibold text-[var(--text2)] uppercase tracking-wider mb-3 flex items-center gap-2">
-                <Image className="w-4 h-4" /> Company Logo
-              </h3>
+            {/* Company Logo — admin-only. Members have no say in branding
+                and shouldn't be prompted to upload anything. */}
+            {company.is_owner && (
+              <section>
+                <h3 className="text-xs font-semibold text-[var(--text2)] uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <Image className="w-4 h-4" /> Company Logo
+                </h3>
               <div className="bg-[var(--bg2)] border border-[var(--border)] rounded-xl p-4">
                 {company.plan === "free" ? (
                   /* ── Free plan: logo is a paid feature ── */
@@ -559,7 +570,8 @@ export default function SettingsScreen() {
                   </button>
                 )}
               </div>
-            </section>
+              </section>
+            )}
 
             {/* Report Settings (Phase 1) — admin-only */}
             {company.is_owner && (
