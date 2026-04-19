@@ -228,7 +228,7 @@ export default function VisitFormScreen() {
           {screenTitle}
         </h2>
         {!isOnline && (
-          <span className="flex items-center gap-1 text-[10px] text-warning font-semibold">
+          <span className="flex items-center gap-1 text-xs text-warning font-semibold">
             <WifiOff className="w-3.5 h-3.5" /> Offline
           </span>
         )}
@@ -242,7 +242,7 @@ export default function VisitFormScreen() {
             "MIL-V01", "2026/04/13"). Leaving it blank falls back to
             the next auto number, shown as placeholder. */}
         <div className="mb-5 animate-slide-up">
-          <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-2">Visit Number</label>
+          <label className="text-xs font-semibold text-[var(--text2)] uppercase tracking-wider block mb-2">Visit Number</label>
           <input
             value={visitRef}
             onChange={(e) => setVisitRef(e.target.value)}
@@ -250,14 +250,14 @@ export default function VisitFormScreen() {
             maxLength={50}
             className="w-full px-3.5 py-3 bg-[var(--bg2)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
           />
-          <p className="text-[10px] text-[var(--text3)] mt-1">
+          <p className="text-xs text-[var(--text3)] mt-1">
             Leave blank to use the auto-incrementing number ({nextVisitNo}). Custom values appear on reports and visit cards.
           </p>
         </div>
 
         {/* Weather + mic */}
         <div className="mb-5 animate-slide-up delay-50">
-          <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-2">Weather</label>
+          <label className="text-xs font-semibold text-[var(--text2)] uppercase tracking-wider block mb-2">Weather</label>
           <div className="flex gap-2 items-center">
             <input
               value={weather}
@@ -288,7 +288,7 @@ export default function VisitFormScreen() {
 
         {/* Attendees */}
         <div className="mb-5 animate-slide-up delay-50">
-          <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-2">Attendees</label>
+          <label className="text-xs font-semibold text-[var(--text2)] uppercase tracking-wider block mb-2">Attendees</label>
           <input
             value={attendees}
             onChange={(e) => setAttendees(e.target.value)}
@@ -299,7 +299,7 @@ export default function VisitFormScreen() {
 
         {/* Access Notes + mic */}
         <div className="mb-5 animate-slide-up delay-100">
-          <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-2">Access Notes</label>
+          <label className="text-xs font-semibold text-[var(--text2)] uppercase tracking-wider block mb-2">Access Notes</label>
           <div className="flex gap-3 items-start">
             <textarea
               value={accessNotes}
@@ -337,10 +337,10 @@ export default function VisitFormScreen() {
 
         {/* Document Control roles */}
         <div className="mb-5 animate-slide-up delay-150 pt-3 border-t border-[var(--border)]">
-          <p className="text-[10px] text-[var(--text3)] uppercase tracking-wider mb-2">Document Control (for PDF report)</p>
+          <p className="text-xs text-[var(--text3)] uppercase tracking-wider mb-2">Document Control (for PDF report)</p>
           <div className="grid grid-cols-3 gap-2">
             <div>
-              <label className="text-[10px] text-[var(--text3)] block mb-1">Checker</label>
+              <label className="text-xs text-[var(--text3)] block mb-1">Checker</label>
               <input
                 value={checker}
                 onChange={(e) => setChecker(e.target.value)}
@@ -349,7 +349,7 @@ export default function VisitFormScreen() {
               />
             </div>
             <div>
-              <label className="text-[10px] text-[var(--text3)] block mb-1">Reviewer</label>
+              <label className="text-xs text-[var(--text3)] block mb-1">Reviewer</label>
               <input
                 value={reviewer}
                 onChange={(e) => setReviewer(e.target.value)}
@@ -358,7 +358,7 @@ export default function VisitFormScreen() {
               />
             </div>
             <div>
-              <label className="text-[10px] text-[var(--text3)] block mb-1">Approver</label>
+              <label className="text-xs text-[var(--text3)] block mb-1">Approver</label>
               <input
                 value={approver}
                 onChange={(e) => setApprover(e.target.value)}
@@ -371,14 +371,14 @@ export default function VisitFormScreen() {
 
         {/* Report Footer Text */}
         <div className="mb-8 animate-slide-up delay-200 pt-3 border-t border-[var(--border)]">
-          <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-2">Report Footer Text</label>
+          <label className="text-xs font-semibold text-[var(--text2)] uppercase tracking-wider block mb-2">Report Footer Text</label>
           <textarea
             value={closingNotes}
             onChange={(e) => setClosingNotes(e.target.value)}
             rows={4}
             className="w-full px-3.5 py-2.5 bg-[var(--bg2)] border border-[var(--border)] rounded-lg text-xs text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors resize-none leading-relaxed"
           />
-          <p className="text-[10px] text-[var(--text3)] mt-1">This text appears on the last page of the PDF report</p>
+          <p className="text-xs text-[var(--text3)] mt-1">This text appears on the last page of the PDF report</p>
         </div>
 
         {/* Submit */}

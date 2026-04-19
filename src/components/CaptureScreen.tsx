@@ -331,7 +331,7 @@ export default function CaptureScreen() {
           {screenTitle}
         </h2>
         {!isOnline && (
-          <span className="flex items-center gap-1 text-[10px] text-warning font-semibold">
+          <span className="flex items-center gap-1 text-xs text-warning font-semibold">
             <WifiOff className="w-3.5 h-3.5" /> Offline
           </span>
         )}
@@ -353,7 +353,7 @@ export default function CaptureScreen() {
 
         {/* Photos (up to 4) */}
         <div className="mb-5 animate-slide-up">
-          <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-2">
+          <label className="text-xs font-semibold text-[var(--text2)] uppercase tracking-wider block mb-2">
             Photos ({photoCount}/{MAX_PHOTOS})
           </label>
           <div className="grid grid-cols-2 gap-2">
@@ -371,7 +371,7 @@ export default function CaptureScreen() {
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
-                <span className="absolute bottom-1.5 left-1.5 text-[10px] font-bold text-white bg-black/50 px-1.5 py-0.5 rounded">
+                <span className="absolute bottom-1.5 left-1.5 text-xs font-bold text-white bg-black/50 px-1.5 py-0.5 rounded">
                   {i + 1}
                 </span>
               </div>
@@ -421,7 +421,7 @@ export default function CaptureScreen() {
 
         {/* Note + Mic */}
         <div className="mb-5 animate-slide-up delay-50">
-          <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-2">Description</label>
+          <label className="text-xs font-semibold text-[var(--text2)] uppercase tracking-wider block mb-2">Description</label>
           <div className="flex gap-3 items-start">
             <textarea
               value={note}
@@ -458,7 +458,7 @@ export default function CaptureScreen() {
 
         {/* Location */}
         <div className="mb-5 animate-slide-up delay-100">
-          <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-2">Location</label>
+          <label className="text-xs font-semibold text-[var(--text2)] uppercase tracking-wider block mb-2">Location</label>
           <div className="flex gap-2 items-center">
             <input
               value={location}
@@ -487,7 +487,7 @@ export default function CaptureScreen() {
 
         {/* Priority */}
         <div className="mb-8 animate-slide-up delay-150">
-          <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-2">Priority</label>
+          <label className="text-xs font-semibold text-[var(--text2)] uppercase tracking-wider block mb-2">Priority</label>
           <div className="flex gap-2">
             {(["low", "medium", "high"] as const).map((p) => (
               <button

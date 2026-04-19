@@ -100,7 +100,7 @@ export default function SiteVisitsScreen() {
         </button>
         <div className="flex-1 text-center min-w-0">
           <h2 className="text-base font-semibold truncate text-[var(--text-primary)]">{currentProject?.name}</h2>
-          <p className="text-[11px] text-[var(--text3)]">{currentProject?.client}</p>
+          <p className="text-xs text-[var(--text3)]">{currentProject?.client}</p>
         </div>
         <div className="w-9" />
       </div>
@@ -111,15 +111,15 @@ export default function SiteVisitsScreen() {
         <div className="grid grid-cols-3 gap-2.5 mb-5 animate-slide-up">
           <div className="bg-[var(--bg2)] border border-[var(--border)] rounded-xl p-3 text-center">
             <div className="text-xl font-bold font-mono text-[var(--text-primary)]">{visits.length}</div>
-            <div className="text-[10px] text-[var(--text3)] uppercase tracking-wider mt-0.5">Total Visits</div>
+            <div className="text-xs text-[var(--text3)] uppercase tracking-wider mt-0.5">Total Visits</div>
           </div>
           <div className="bg-[var(--bg2)] border border-[var(--border)] rounded-xl p-3 text-center">
             <div className="text-xl font-bold font-mono text-brand">{openCount}</div>
-            <div className="text-[10px] text-[var(--text3)] uppercase tracking-wider mt-0.5">Open</div>
+            <div className="text-xs text-[var(--text3)] uppercase tracking-wider mt-0.5">Open</div>
           </div>
           <div className="bg-[var(--bg2)] border border-[var(--border)] rounded-xl p-3 text-center">
             <div className="text-xl font-bold font-mono text-success">{closedCount}</div>
-            <div className="text-[10px] text-[var(--text3)] uppercase tracking-wider mt-0.5">Closed</div>
+            <div className="text-xs text-[var(--text3)] uppercase tracking-wider mt-0.5">Closed</div>
           </div>
         </div>
 
@@ -149,12 +149,12 @@ export default function SiteVisitsScreen() {
                       Site Visit #{v.visit_ref || v.visit_no}
                     </h3>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="text-[11px] text-[var(--text3)] flex items-center gap-1">
+                      <span className="text-xs text-[var(--text3)] flex items-center gap-1">
                         <Calendar className="w-3 h-3" />
                         {new Date(v.visit_date).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
                       </span>
                       {v.weather && (
-                        <span className="text-[11px] text-[var(--text3)] flex items-center gap-1">
+                        <span className="text-xs text-[var(--text3)] flex items-center gap-1">
                           <CloudSun className="w-3 h-3" /> {v.weather}
                         </span>
                       )}
@@ -162,7 +162,7 @@ export default function SiteVisitsScreen() {
                   </div>
                   <span
                     className={clsx(
-                      "text-[11px] font-semibold px-2.5 py-0.5 rounded-full",
+                      "text-xs font-semibold px-2.5 py-0.5 rounded-full",
                       v.status === "open"
                         ? "text-brand bg-brand/10"
                         : "text-success bg-success/10"
@@ -172,7 +172,7 @@ export default function SiteVisitsScreen() {
                   </span>
                 </div>
                 {v.inspector && (
-                  <p className="text-[11px] text-[var(--text3)] mt-1.5">Inspector: {v.inspector}</p>
+                  <p className="text-xs text-[var(--text3)] mt-1.5">Inspector: {v.inspector}</p>
                 )}
                 {/* Item-count pills — only shown when the visit has at least one item.
                     Each pill is hidden individually if its count is zero, so a visit with
@@ -180,12 +180,12 @@ export default function SiteVisitsScreen() {
                 {(v.snag_count ?? 0) > 0 && (
                   <div className="flex flex-wrap gap-1.5 mt-2">
                     {(v.open_count ?? 0) > 0 && (
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-warning/10 text-warning">
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-warning/10 text-warning">
                         {v.open_count} open
                       </span>
                     )}
                     {(v.closed_count ?? 0) > 0 && (
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-success/10 text-success">
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-success/10 text-success">
                         {v.closed_count} closed
                       </span>
                     )}

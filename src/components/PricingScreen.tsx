@@ -228,7 +228,7 @@ export default function PricingScreen() {
               annual ? "text-[var(--text-primary)]" : "text-[var(--text3)]"
             )}
           >
-            Annual <span className="text-success text-[10px]">Save 17%</span>
+            Annual <span className="text-success text-xs">Save 17%</span>
           </span>
         </div>
 
@@ -255,12 +255,12 @@ export default function PricingScreen() {
                     <div className="flex items-center gap-2">
                       <h3 className="text-base font-bold text-[var(--text-primary)]">{plan.name}</h3>
                       {plan.popular && (
-                        <span className="text-[9px] font-bold uppercase bg-brand text-white px-2 py-0.5 rounded-full">
+                        <span className="text-xs font-bold uppercase bg-brand text-white px-2 py-0.5 rounded-full">
                           Popular
                         </span>
                       )}
                     </div>
-                    <p className="text-[11px] text-[var(--text3)] truncate">
+                    <p className="text-xs text-[var(--text3)] truncate">
                       {summaryFor(plan.slug)}
                     </p>
                   </div>
@@ -270,12 +270,12 @@ export default function PricingScreen() {
                     ) : annual ? (
                       <>
                         <span className="text-lg font-bold text-[var(--text-primary)]">€{price}</span>
-                        <span className="text-[11px] text-[var(--text3)]">/year</span>
+                        <span className="text-xs text-[var(--text3)]">/year</span>
                       </>
                     ) : (
                       <>
                         <span className="text-lg font-bold text-[var(--text-primary)]">€{price}</span>
-                        <span className="text-[11px] text-[var(--text3)]">/mo</span>
+                        <span className="text-xs text-[var(--text3)]">/mo</span>
                       </>
                     )}
                   </div>
@@ -286,7 +286,7 @@ export default function PricingScreen() {
                   {highlights.map((f) => (
                     <span
                       key={f}
-                      className="text-[10px] text-[var(--text2)] flex items-center gap-1"
+                      className="text-xs text-[var(--text2)] flex items-center gap-1"
                     >
                       <Check className="w-3 h-3 text-success" /> {f}
                     </span>
@@ -295,7 +295,7 @@ export default function PricingScreen() {
 
                 {/* Free-plan watermark disclosure */}
                 {plan.slug === "free" && (
-                  <p className="text-[10px] text-[var(--text3)] italic mb-3">
+                  <p className="text-xs text-[var(--text3)] italic mb-3">
                     Reports include a "VOXSITE · FREE PLAN" watermark.
                   </p>
                 )}
@@ -339,7 +339,7 @@ export default function PricingScreen() {
 
           {compareOpen && (
             <div className="mt-4 overflow-x-auto -mx-5 px-5">
-              <table className="w-full text-[11px] border-separate border-spacing-0">
+              <table className="w-full text-xs border-separate border-spacing-0">
                 <thead>
                   <tr>
                     <th className="text-left font-semibold text-[var(--text3)] pb-2 pr-2 sticky left-0 bg-[var(--bg)]">
@@ -428,7 +428,7 @@ export default function PricingScreen() {
         <div className="mt-6 text-center border border-[var(--border)] rounded-2xl p-5 bg-[var(--bg2)]">
           <Zap className="w-6 h-6 text-brand mx-auto mb-2" />
           <h3 className="text-sm font-bold mb-1 text-[var(--text-primary)]">Enterprise</h3>
-          <p className="text-[11px] text-[var(--text3)] mb-3 leading-relaxed">
+          <p className="text-xs text-[var(--text3)] mb-3 leading-relaxed">
             Unlimited users, unlimited everything, individual report templates,
             and dedicated support. Starts at €299+/mo — custom pricing based on
             your team size and needs.

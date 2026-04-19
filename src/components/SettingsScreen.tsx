@@ -393,7 +393,7 @@ export default function SettingsScreen() {
                 <User className="w-4 h-4" /> Your Name
               </h3>
               <div className="bg-[var(--bg2)] border border-[var(--border)] rounded-xl p-4">
-                <p className="text-[11px] text-[var(--text3)] mb-3">This name appears as the inspector signature on PDF reports.</p>
+                <p className="text-xs text-[var(--text3)] mb-3">This name appears as the inspector signature on PDF reports.</p>
                 <div className="flex gap-2 mb-2">
                   <input value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="First name"
                     className="flex-1 min-w-0 px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors" />
@@ -414,7 +414,7 @@ export default function SettingsScreen() {
 
             <div className="space-y-3">
               <div>
-                <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">Company Name</label>
+                <label className="text-xs font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">Company Name</label>
                 <input
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
@@ -441,7 +441,7 @@ export default function SettingsScreen() {
                 <User className="w-4 h-4" /> Your Name
               </h3>
               <div className="bg-[var(--bg2)] border border-[var(--border)] rounded-xl p-4">
-                <p className="text-[11px] text-[var(--text3)] mb-3">This name appears as the inspector signature on PDF reports.</p>
+                <p className="text-xs text-[var(--text3)] mb-3">This name appears as the inspector signature on PDF reports.</p>
                 <div className="flex gap-2 mb-2">
                   <input value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="First name"
                     className="flex-1 min-w-0 px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors" />
@@ -507,7 +507,7 @@ export default function SettingsScreen() {
                 <Building2 className="w-4 h-4" /> Company Info
               </h3>
               <div className="bg-[var(--bg2)] border border-[var(--border)] rounded-xl p-4">
-                <label className="text-[11px] font-semibold text-[var(--text3)] uppercase tracking-wider block mb-1.5">Name</label>
+                <label className="text-xs font-semibold text-[var(--text3)] uppercase tracking-wider block mb-1.5">Name</label>
                 {company.is_owner ? (
                   <div className="flex gap-2">
                     <input
@@ -570,11 +570,11 @@ export default function SettingsScreen() {
                     // Show it, but be clear it won't appear on reports until upgrade.
                     <div className="flex items-center gap-4">
                       <div className="w-16 h-16 bg-white rounded-lg flex items-center justify-center overflow-hidden opacity-60">
-                        <span className="text-[10px] text-gray-400">Logo</span>
+                        <span className="text-xs text-gray-400">Logo</span>
                       </div>
                       <div className="flex-1">
                         <p className="text-sm text-warning font-semibold">Logo uploaded but hidden</p>
-                        <p className="text-[11px] text-[var(--text3)]">Upgrade to Starter or higher to show your logo on PDF reports.</p>
+                        <p className="text-xs text-[var(--text3)]">Upgrade to Starter or higher to show your logo on PDF reports.</p>
                       </div>
                       <button
                         onClick={handleDeleteLogo}
@@ -610,11 +610,11 @@ export default function SettingsScreen() {
                   /* ── Paid plan, logo uploaded ── */
                   <div className="flex items-center gap-4">
                     <div className="w-16 h-16 bg-white rounded-lg flex items-center justify-center overflow-hidden">
-                      <span className="text-[10px] text-gray-400">Logo</span>
+                      <span className="text-xs text-gray-400">Logo</span>
                     </div>
                     <div className="flex-1">
                       <p className="text-sm text-success font-semibold">Logo uploaded</p>
-                      <p className="text-[11px] text-[var(--text3)]">Appears on PDF report covers and headers</p>
+                      <p className="text-xs text-[var(--text3)]">Appears on PDF report covers and headers</p>
                     </div>
                     <div className="flex gap-2">
                       <button
@@ -641,7 +641,7 @@ export default function SettingsScreen() {
                   >
                     <Upload className="w-8 h-8 mx-auto mb-2 text-[var(--text3)] group-hover:text-brand transition-colors" />
                     <p className="text-sm text-[var(--text2)] group-hover:text-[var(--text-primary)] transition-colors">Upload company logo</p>
-                    <p className="text-[11px] text-[var(--text3)] mt-1">PNG or JPEG, max 5MB</p>
+                    <p className="text-xs text-[var(--text3)] mt-1">PNG or JPEG, max 5MB</p>
                   </button>
                 )}
               </div>
@@ -655,13 +655,13 @@ export default function SettingsScreen() {
                   <FileText className="w-4 h-4" /> Report Settings
                 </h3>
                 <div className="bg-[var(--bg2)] border border-[var(--border)] rounded-xl p-4 space-y-4">
-                  <p className="text-[11px] text-[var(--text3)] leading-relaxed">
+                  <p className="text-xs text-[var(--text3)] leading-relaxed">
                     These settings apply to every PDF report your team generates.
                   </p>
 
                   {/* Brand colour */}
                   <div>
-                    <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">
+                    <label className="text-xs font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">
                       Brand Colour
                     </label>
                     <div className="flex items-center gap-2">
@@ -681,7 +681,7 @@ export default function SettingsScreen() {
                         className="flex-1 px-3 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors font-mono"
                       />
                     </div>
-                    <p className="text-[10px] text-[var(--text3)] mt-1">
+                    <p className="text-xs text-[var(--text3)] mt-1">
                       Used for headings and the cover-page accent bar on PDF reports.
                     </p>
                   </div>
@@ -692,7 +692,7 @@ export default function SettingsScreen() {
                       <label className="text-sm font-medium text-[var(--text-primary)] block">
                         Include rectification sign-off
                       </label>
-                      <p className="text-[11px] text-[var(--text3)] mt-0.5 leading-relaxed">
+                      <p className="text-xs text-[var(--text3)] mt-0.5 leading-relaxed">
                         Adds a blank "Rectified on / by / signature" block under each open item for contractors to fill in by hand or in a PDF editor.
                       </p>
                     </div>
@@ -715,7 +715,7 @@ export default function SettingsScreen() {
 
                   {/* Photos per page (Phase 1 stores; Phase 2 renders) */}
                   <div>
-                    <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">
+                    <label className="text-xs font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">
                       Photos per page
                     </label>
                     <div className="flex gap-2">
@@ -734,14 +734,14 @@ export default function SettingsScreen() {
                         </button>
                       ))}
                     </div>
-                    <p className="text-[10px] text-[var(--text3)] mt-1">
+                    <p className="text-xs text-[var(--text3)] mt-1">
                       Saved now — active in the next release.
                     </p>
                   </div>
 
                   {/* Footer text */}
                   <div>
-                    <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">
+                    <label className="text-xs font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">
                       Report footer text
                     </label>
                     <textarea
@@ -752,7 +752,7 @@ export default function SettingsScreen() {
                       maxLength={1000}
                       className="w-full px-3 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors resize-none leading-relaxed"
                     />
-                    <p className="text-[10px] text-[var(--text3)] mt-1">
+                    <p className="text-xs text-[var(--text3)] mt-1">
                       Appears at the bottom of the closing page on every PDF report. Leave blank to omit.
                     </p>
                   </div>
@@ -792,9 +792,9 @@ export default function SettingsScreen() {
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate text-[var(--text-primary)]">{display}</p>
                         {m.email && m.full_name && (
-                          <p className="text-[10px] text-[var(--text3)] truncate">{m.email}</p>
+                          <p className="text-xs text-[var(--text3)] truncate">{m.email}</p>
                         )}
-                        <p className={`text-[10px] font-semibold uppercase ${
+                        <p className={`text-xs font-semibold uppercase ${
                           isOwner ? "text-brand" : "text-[var(--text3)]"
                         }`}>{m.role === "owner" ? "Admin" : m.role}</p>
                       </div>
@@ -823,7 +823,7 @@ export default function SettingsScreen() {
                           <p className="text-sm truncate text-[var(--text-primary)]">{inv.email}</p>
                           <div className="flex items-center gap-1.5">
                             <Clock className="w-3 h-3 text-warning" />
-                            <span className="text-[10px] text-warning font-semibold uppercase">Pending invite</span>
+                            <span className="text-xs text-warning font-semibold uppercase">Pending invite</span>
                           </div>
                         </div>
                         {company.is_owner && (

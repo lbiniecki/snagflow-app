@@ -107,7 +107,7 @@ export default function ProjectsScreen() {
           {/* Owner-only: upgrade pill. Hidden for regular members — they
               can't change billing anyway, and the pill is confusing noise. */}
           {isCompanyOwner !== false && (
-            <button onClick={() => setScreen("pricing")} className="px-3 py-1.5 rounded-full bg-brand/10 text-brand text-[11px] font-semibold hover:bg-brand/20 transition-colors flex items-center gap-1">
+            <button onClick={() => setScreen("pricing")} className="px-3 py-1.5 rounded-full bg-brand/10 text-brand text-xs font-semibold hover:bg-brand/20 transition-colors flex items-center gap-1">
               <Sparkles className="w-3.5 h-3.5" /> Upgrade
             </button>
           )}
@@ -123,15 +123,15 @@ export default function ProjectsScreen() {
         <div className="grid grid-cols-3 gap-2.5 mb-5 animate-slide-up">
           <div className="bg-[var(--bg2)] border border-[var(--border)] rounded-xl p-3.5 text-center">
             <div className="text-2xl font-bold font-mono text-[var(--text-primary)]">{projects.length}</div>
-            <div className="text-[10px] text-[var(--text3)] uppercase tracking-wider mt-1">Projects</div>
+            <div className="text-xs text-[var(--text3)] uppercase tracking-wider mt-1">Projects</div>
           </div>
           <div className="bg-[var(--bg2)] border border-[var(--border)] rounded-xl p-3.5 text-center">
             <div className="text-2xl font-bold font-mono text-info">{totalOpen}</div>
-            <div className="text-[10px] text-[var(--text3)] uppercase tracking-wider mt-1">Total Items</div>
+            <div className="text-xs text-[var(--text3)] uppercase tracking-wider mt-1">Total Items</div>
           </div>
           <div className="bg-[var(--bg2)] border border-[var(--border)] rounded-xl p-3.5 text-center">
             <div className="text-2xl font-bold font-mono text-success">0</div>
-            <div className="text-[10px] text-[var(--text3)] uppercase tracking-wider mt-1">Closed</div>
+            <div className="text-xs text-[var(--text3)] uppercase tracking-wider mt-1">Closed</div>
           </div>
         </div>
 
@@ -160,7 +160,7 @@ export default function ProjectsScreen() {
                 </div>
                 <div className="flex items-center gap-2">
                   {p.snag_count > 0 && (
-                    <span className="text-[11px] font-semibold text-info bg-info/10 px-2.5 py-0.5 rounded-full">
+                    <span className="text-xs font-semibold text-info bg-info/10 px-2.5 py-0.5 rounded-full">
                       {p.snag_count} items
                     </span>
                   )}
@@ -173,7 +173,7 @@ export default function ProjectsScreen() {
                   </button>
                 </div>
               </div>
-              <p className="text-[11px] text-[var(--text3)] mt-2.5">
+              <p className="text-xs text-[var(--text3)] mt-2.5">
                 Created {new Date(p.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
               </p>
             </button>
@@ -208,7 +208,7 @@ export default function ProjectsScreen() {
 
               <div className="space-y-3 mb-5">
                 <div>
-                  <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">Project Name</label>
+                  <label className="text-xs font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">Project Name</label>
                   <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Riverside Apartments – Block B" autoFocus
                     onFocus={(e) => {
                       const el = e.currentTarget;
@@ -218,7 +218,7 @@ export default function ProjectsScreen() {
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">Client</label>
+                  <label className="text-xs font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">Client</label>
                   <input value={client} onChange={(e) => setClient(e.target.value)} placeholder="e.g. Horizon Developments"
                     onFocus={(e) => {
                       const el = e.currentTarget;
@@ -228,7 +228,7 @@ export default function ProjectsScreen() {
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">Site Address</label>
+                  <label className="text-xs font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">Site Address</label>
                   <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="e.g. 42 River Road, Dublin"
                     onFocus={(e) => {
                       const el = e.currentTarget;

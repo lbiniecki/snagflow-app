@@ -340,7 +340,7 @@ export default function SnagsScreen() {
           <h2 className="text-base font-semibold truncate text-[var(--text-primary)]">
             {currentVisit ? `Visit #${currentVisit.visit_ref || currentVisit.visit_no}` : currentProject?.name}
           </h2>
-          <p className="text-[11px] text-[var(--text3)]">
+          <p className="text-xs text-[var(--text3)]">
             {currentProject?.name}{currentVisit?.weather ? ` • ${currentVisit.weather}` : ""}
           </p>
         </div>
@@ -383,7 +383,7 @@ export default function SnagsScreen() {
         {/* Pending offline snags */}
         {pendingSnags.length > 0 && (
           <div className="mb-4">
-            <p className="text-[11px] font-semibold text-warning uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <p className="text-xs font-semibold text-warning uppercase tracking-wider mb-2 flex items-center gap-1.5">
               <CloudUpload className="w-3.5 h-3.5" /> {pendingSnags.length} pending sync
             </p>
             {pendingSnags.map((p) => (
@@ -392,7 +392,7 @@ export default function SnagsScreen() {
                   <WifiOff className="w-4 h-4 text-warning flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-[var(--text-primary)] truncate">{p.note}</p>
-                    <p className="text-[10px] text-[var(--text3)]">
+                    <p className="text-xs text-[var(--text3)]">
                       {p.location || "No location"} • {p.photos.length} photo{p.photos.length !== 1 ? "s" : ""} • {p.status}
                     </p>
                   </div>
@@ -454,14 +454,14 @@ export default function SnagsScreen() {
                 <div className="flex-1 min-w-0">
                   <p className="text-[13px] font-medium leading-snug mb-1.5 text-[var(--text-primary)]">{s.note}</p>
                   <div className="flex flex-wrap gap-1.5">
-                    <span className={clsx("text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase", STATUS_COLORS[s.status])}>
+                    <span className={clsx("text-xs font-semibold px-2 py-0.5 rounded-full uppercase", STATUS_COLORS[s.status])}>
                       {s.status}
                     </span>
-                    <span className={clsx("text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase", PRIORITY_COLORS[s.priority])}>
+                    <span className={clsx("text-xs font-semibold px-2 py-0.5 rounded-full uppercase", PRIORITY_COLORS[s.priority])}>
                       {s.priority}
                     </span>
                     {s.location && (
-                      <span className="text-[10px] text-[var(--text3)] flex items-center gap-0.5">
+                      <span className="text-xs text-[var(--text3)] flex items-center gap-0.5">
                         <MapPin className="w-3 h-3" /> {s.location}
                       </span>
                     )}
@@ -543,14 +543,14 @@ export default function SnagsScreen() {
             </div>
 
             {/* Report preview */}
-            <div className="bg-white text-gray-900 rounded-xl p-5 text-[11px] leading-relaxed">
+            <div className="bg-white text-gray-900 rounded-xl p-5 text-xs leading-relaxed">
               <div className="flex justify-between items-start pb-3 mb-4 border-b-[3px] border-brand">
                 <div>
                   <h1 className="text-base font-bold text-brand">INSPECTION REPORT</h1>
                   <p className="text-xs text-gray-600">{currentProject?.name}</p>
-                  <p className="text-[10px] text-gray-400">Client: {currentProject?.client || "—"}</p>
+                  <p className="text-xs text-gray-400">Client: {currentProject?.client || "—"}</p>
                 </div>
-                <div className="text-right text-[10px] text-gray-400">
+                <div className="text-right text-xs text-gray-400">
                   <p>Date: {new Date().toLocaleDateString("en-GB")}</p>
                   {/* Ref mirrors the PDF exactly: visit_ref takes precedence,
                       else {first-3-chars-of-project-name}-SV{visit_no padded}.
@@ -575,7 +575,7 @@ export default function SnagsScreen() {
                 ].map((s) => (
                   <div key={s.label} className="text-center p-2 bg-gray-50 rounded-lg">
                     <div className="text-lg font-bold" style={{ color: s.color }}>{s.val}</div>
-                    <div className="text-[9px] text-gray-500">{s.label}</div>
+                    <div className="text-xs text-gray-500">{s.label}</div>
                   </div>
                 ))}
               </div>
@@ -585,7 +585,7 @@ export default function SnagsScreen() {
                 Open Items ({openCount})
               </h2>
               {openCount > 0 ? (
-                <table className="w-full text-[10px] border-collapse">
+                <table className="w-full text-xs border-collapse">
                   <thead>
                     <tr className="bg-gray-50">
                       <th className="p-1.5 text-left border border-gray-200 w-[8%]">#</th>
@@ -601,7 +601,7 @@ export default function SnagsScreen() {
                         <td className="p-1.5 border border-gray-200">{s.note}</td>
                         <td className="p-1.5 border border-gray-200">{s.location || "—"}</td>
                         <td className="p-1.5 border border-gray-200">
-                          <span className={clsx("text-[9px] font-bold uppercase", {
+                          <span className={clsx("text-xs font-bold uppercase", {
                             "text-critical": s.priority === "high",
                             "text-warning": s.priority === "medium",
                             "text-gray-500": s.priority === "low",
@@ -612,7 +612,7 @@ export default function SnagsScreen() {
                   </tbody>
                 </table>
               ) : (
-                <p className="text-gray-400 italic text-[10px] py-2">All items resolved!</p>
+                <p className="text-gray-400 italic text-xs py-2">All items resolved!</p>
               )}
             </div>
           </div>
@@ -657,7 +657,7 @@ export default function SnagsScreen() {
 
             {/* Recipients */}
             <div className="mb-3">
-              <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">
+              <label className="text-xs font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">
                 Recipients
               </label>
               <textarea
@@ -668,14 +668,14 @@ export default function SnagsScreen() {
                 disabled={sendingEmail}
                 className="w-full px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors resize-none"
               />
-              <p className="text-[10px] text-[var(--text3)] mt-1">
+              <p className="text-xs text-[var(--text3)] mt-1">
                 Separate multiple addresses with commas, spaces, or new lines. Up to 10 recipients.
               </p>
             </div>
 
             {/* Optional message */}
             <div className="mb-4">
-              <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">
+              <label className="text-xs font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">
                 Message <span className="text-[var(--text3)] normal-case font-normal">(optional)</span>
               </label>
               <textarea
@@ -691,7 +691,7 @@ export default function SnagsScreen() {
 
             {/* Info note about size handling */}
             <div className="mb-4 p-3 bg-[var(--bg)] border border-[var(--border)] rounded-lg">
-              <p className="text-[11px] text-[var(--text2)] leading-relaxed">
+              <p className="text-xs text-[var(--text2)] leading-relaxed">
                 <span className="font-semibold">Heads-up:</span> reports under
                 10&nbsp;MB are attached directly. Larger reports are uploaded
                 and shared as a time-limited download link valid for 7 days.

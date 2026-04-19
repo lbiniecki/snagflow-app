@@ -43,7 +43,7 @@ export default function OfflineBanner() {
           <span className="flex-1">{pendingCount} item{pendingCount !== 1 ? "s" : ""} waiting to sync</span>
           <button
             onClick={manualSync}
-            className="px-2 py-1 bg-black/20 rounded text-[10px] font-bold uppercase"
+            className="px-2 py-1 bg-black/20 rounded text-xs font-bold uppercase"
           >
             Sync now
           </button>
