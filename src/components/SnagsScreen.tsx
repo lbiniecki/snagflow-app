@@ -433,7 +433,7 @@ export default function SnagsScreen() {
   // back-to-back programmatic downloads unless they're spaced out, and
   // Safari/iOS is especially strict. 200ms is the sweet spot; any
   // shorter and the browser drops downloads 2+ silently.
-  const saveAllPhotos = async (s: Snag) => {
+  const saveAllPhotos = async (s: typeof snags[0]) => {
     // photo_urls is a 4-slot array; nulls represent empty slots
     const slots = (s.photo_urls ?? []).map((url, i) => ({ url, slot: i + 1 }));
     const present = slots.filter((x) => x.url);
