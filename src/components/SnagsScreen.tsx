@@ -552,7 +552,15 @@ export default function SnagsScreen() {
                 </div>
                 <div className="text-right text-[10px] text-gray-400">
                   <p>Date: {new Date().toLocaleDateString("en-GB")}</p>
-                  <p>Ref: VS-{currentProject?.id?.slice(0, 8).toUpperCase()}</p>
+                  {/* Ref mirrors the PDF exactly: visit_ref takes precedence,
+                      else {first-3-chars-of-project-name}-SV{visit_no padded}.
+                      Must match the backend's doc_ref in report_generator.py
+                      (line 170): p_name[:3].upper() + "-SV" + zfill(2). */}
+                  <p>Ref: {
+                    currentVisit?.visit_ref
+                      ? currentVisit.visit_ref
+                      : `${(currentProject?.name || "").slice(0, 3).toUpperCase()}-SV${String(currentVisit?.visit_no ?? 1).padStart(2, "0")}`
+                  }</p>
                 </div>
               </div>
 
