@@ -24,72 +24,82 @@ const PLANS = [
     priceIdAnnual: null as string | null,
   },
   {
+    slug: "solo",
+    name: "Solo",
+    monthlyPrice: 12,
+    annualPrice: 120,
+    priceIdMonthly: "price_1TNyLGIzCuyhGXgYJyUyNFoq",
+    priceIdAnnual: "price_1TNyPrIzCuyhGXgYvxlOVm8F",
+  },
+  {
     slug: "starter",
     name: "Starter",
-    monthlyPrice: 24,
-    annualPrice: 240,
-    priceIdMonthly: "price_1TM9TGIzCuyhGXgYAI34UPiO",
-    priceIdAnnual: "price_1TM9aIIzCuyhGXgY9TeUq3ch",
+    monthlyPrice: 29,
+    annualPrice: 290,
+    priceIdMonthly: "price_1TNySxIzCuyhGXgY6gKc3Yxt",
+    priceIdAnnual: "price_1TNyTqIzCuyhGXgY2ma0qffR",
   },
   {
     slug: "team",
     name: "Team",
-    monthlyPrice: 49,
-    annualPrice: 490,
-    priceIdMonthly: "price_1TM9U3IzCuyhGXgYIFVd7fs1",
-    priceIdAnnual: "price_1TM9akIzCuyhGXgYmbDAHROz",
+    monthlyPrice: 59,
+    annualPrice: 590,
+    priceIdMonthly: "price_1TNyUtIzCuyhGXgYZyfhzQoQ",
+    priceIdAnnual: "price_1TNyVVIzCuyhGXgYACbR2R44",
     popular: true,
   },
   {
     slug: "pro",
     name: "Pro",
-    monthlyPrice: 99,
-    annualPrice: 990,
-    priceIdMonthly: "price_1TM9USIzCuyhGXgY8gYqlcMP",
-    priceIdAnnual: "price_1TM9bJIzCuyhGXgYEpO1hAUF",
+    monthlyPrice: 119,
+    annualPrice: 1190,
+    priceIdMonthly: "price_1TNyWUIzCuyhGXgYyUrkzDZ4",
+    priceIdAnnual: "price_1TNyXiIzCuyhGXgY4RbeEf6U",
   },
   {
     slug: "business",
     name: "Business",
-    monthlyPrice: 179,
-    annualPrice: 1790,
-    priceIdMonthly: "price_1TM9UlIzCuyhGXgYCVxWXZsC",
-    priceIdAnnual: "price_1TM9bmIzCuyhGXgYv9aUGOGR",
+    monthlyPrice: 199,
+    annualPrice: 1990,
+    priceIdMonthly: "price_1TNyYiIzCuyhGXgYhOtdqwNy",
+    priceIdAnnual: "price_1TNyZbIzCuyhGXgY2kiwRDs0",
   },
 ];
 
-// Order of plans: free, starter, team, pro, business
+// Order of plans: free, solo, starter, team, pro, business
 const LIMIT_ROWS: LimitRow[] = [
-  { label: "Users",        values: [1, 3, 10, 25, 50] },
-  { label: "Projects",     values: [2, 5, 15, "Unlimited", "Unlimited"] },
-  { label: "Items / month", values: [20, 100, 500, "Unlimited", "Unlimited"] },
-  { label: "Photos / item", values: [4, 4, 4, 4, 4] },
+  { label: "Users",         values: [1, 1, 3, 10, 30, 75] },
+  { label: "Projects",      values: [1, 5, 15, 50, "Unlimited", "Unlimited"] },
+  { label: "Items / month", values: [20, 100, 300, 1000, "Unlimited", "Unlimited"] },
+  { label: "Photos / item", values: [4, 4, 4, 4, 4, 4] },
 ];
 
 const FEATURE_ROWS: FeatureRow[] = [
-  { label: "PDF reports",         values: [true,  true,  true,  true,  true] },
-  { label: "Voice dictation",     values: [true,  true,  true,  true,  true] },
-  { label: "Offline mode",        values: [true,  true,  true,  true,  true] },
-  { label: "Company logo on PDF", values: [false, true,  true,  true,  true],  highlight: true },
-  { label: "Send report by email",values: [false, false, true,  true,  true],  highlight: true },
+  { label: "PDF reports",                   values: [true,  true, true, true, true, true] },
+  { label: "Voice dictation",               values: [true,  true, true, true, true, true] },
+  { label: "Offline mode",                  values: [true,  true, true, true, true, true] },
+  { label: "Company logo + brand colour",   values: [false, true, true, true, true, true], highlight: true },
+  { label: "Send report by email",          values: [false, true, true, true, true, true], highlight: true },
+  { label: "Rectification sign-off",        values: [false, true, true, true, true, true], highlight: true },
 ];
 
 // Special row: watermark is a NEGATIVE signal — it's only on Free and indicates
 // the free plan's PDFs carry a "VOXSITE · FREE PLAN" diagonal mark.
 const WATERMARK_ROW: FeatureRow = {
   label: "PDF watermark",
-  values: [true, false, false, false, false],
+  values: [true, false, false, false, false, false],
   highlight: true,
 };
 
 // Per-plan summary shown inside each card (headline limits)
 function summaryFor(slug: string): string {
   switch (slug) {
-    case "free":     return "1 user · 2 projects · 20 items/mo";
-    case "starter":  return "3 users · 5 projects · 100 items/mo";
-    case "team":     return "10 users · 15 projects · 500 items/mo";
-    case "pro":      return "25 users · Unlimited";
-    case "business": return "50 users · Unlimited";
+    case "free":     return "1 user · 1 project · 20 items/mo";
+    case "solo":     return "1 user · 5 projects · 100 items/mo";
+    case "starter":  return "3 users · 15 projects · 300 items/mo";
+    case "team":     return "10 users · 50 projects · 1,000 items/mo";
+    case "pro":      return "30 users · Unlimited";
+    case "business": return "75 users · Unlimited";
     default:         return "";
   }
 }
@@ -99,14 +109,16 @@ function highlightsFor(slug: string): string[] {
   switch (slug) {
     case "free":
       return ["PDF reports", "Voice dictation", "Offline mode"];
+    case "solo":
+      return ["Company logo + brand colour", "Email reports", "No watermark"];
     case "starter":
-      return ["Everything in Free", "Company logo on PDF", "No watermark"];
+      return ["Everything in Solo", "3 users", "15 projects"];
     case "team":
-      return ["Everything in Starter", "Send reports by email", "10 team seats"];
+      return ["Everything in Starter", "10 users", "50 projects"];
     case "pro":
       return ["Everything in Team", "Unlimited projects", "Unlimited items"];
     case "business":
-      return ["Everything in Pro", "50 team seats", "Priority support"];
+      return ["Everything in Pro", "75 users", "Priority support"];
     default:
       return [];
   }
@@ -415,15 +427,17 @@ export default function PricingScreen() {
         {/* Enterprise */}
         <div className="mt-6 text-center border border-[var(--border)] rounded-2xl p-5 bg-[var(--bg2)]">
           <Zap className="w-6 h-6 text-brand mx-auto mb-2" />
-          <h3 className="text-sm font-bold mb-1 text-[var(--text-primary)]">Need more than 50 users?</h3>
-          <p className="text-[11px] text-[var(--text3)] mb-3">
-            Enterprise plan starts at €299+/mo — unlimited everything, dedicated support.
+          <h3 className="text-sm font-bold mb-1 text-[var(--text-primary)]">Enterprise</h3>
+          <p className="text-[11px] text-[var(--text3)] mb-3 leading-relaxed">
+            Unlimited users, unlimited everything, individual report templates,
+            and dedicated support. Starts at €299+/mo — custom pricing based on
+            your team size and needs.
           </p>
           <a
-            href="mailto:lukasz.biniecki@hanleypepper.ie?subject=VoxSite Enterprise"
-            className="inline-block px-5 py-2 bg-brand/10 text-brand text-xs font-semibold rounded-lg"
+            href="mailto:sales@voxsite.app?subject=VoxSite%20Enterprise%20enquiry"
+            className="inline-block px-5 py-2 bg-brand/10 text-brand text-xs font-semibold rounded-lg hover:bg-brand/20 transition-colors"
           >
-            Contact Us
+            Contact Sales
           </a>
         </div>
 

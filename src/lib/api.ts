@@ -115,7 +115,7 @@ export interface Profile {
 }
 
 // ─── Plan / Billing types ─────────────────────────────────────
-export type PlanSlug = "free" | "starter" | "team" | "pro" | "business" | "enterprise";
+export type PlanSlug = "free" | "solo" | "starter" | "team" | "pro" | "business" | "enterprise";
 
 export interface PlanLimits {
   max_users: number;
