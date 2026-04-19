@@ -12,7 +12,7 @@ interface AppState {
   logout: () => void;
 
   // Navigation
-  screen: "login" | "projects" | "visits" | "snags" | "capture" | "pricing" | "settings";
+  screen: "login" | "projects" | "visits" | "visitForm" | "snags" | "capture" | "pricing" | "settings";
   setScreen: (screen: AppState["screen"]) => void;
 
   // Company-ownership flag — set after fetching the user's company (in
@@ -34,6 +34,12 @@ interface AppState {
   currentVisit: SiteVisit | null;
   setVisits: (visits: SiteVisit[]) => void;
   setCurrentVisit: (visit: SiteVisit | null) => void;
+
+  // Edit target — when not null, VisitFormScreen operates in edit mode
+  // and pre-fills from this visit instead of creating a new one. Cleared
+  // on successful save, explicit discard, or navigation away.
+  editingVisit: SiteVisit | null;
+  setEditingVisit: (visit: SiteVisit | null) => void;
 
   // Snags
   snags: Snag[];
@@ -83,6 +89,10 @@ export const useStore = create<AppState>((set) => ({
   currentVisit: null,
   setVisits: (visits) => set({ visits }),
   setCurrentVisit: (visit) => set({ currentVisit: visit }),
+
+  // Edit target (visit form)
+  editingVisit: null,
+  setEditingVisit: (editingVisit) => set({ editingVisit }),
 
   // Snags
   snags: [],

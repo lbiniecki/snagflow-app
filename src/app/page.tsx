@@ -5,6 +5,7 @@ import { getToken, setToken } from "@/lib/api";
 import LoginScreen from "@/components/LoginScreen";
 import ProjectsScreen from "@/components/ProjectsScreen";
 import SiteVisitsScreen from "@/components/SiteVisitsScreen";
+import VisitFormScreen from "@/components/VisitFormScreen";
 import SnagsScreen from "@/components/SnagsScreen";
 import CaptureScreen from "@/components/CaptureScreen";
 import PricingScreen from "@/components/PricingScreen";
@@ -87,6 +88,7 @@ export default function Home() {
       {screen === "login" && <LoginScreen />}
       {screen === "projects" && <ProjectsScreen />}
       {screen === "visits" && <SiteVisitsScreen />}
+      {screen === "visitForm" && <VisitFormScreen />}
       {screen === "snags" && <SnagsScreen />}
       {screen === "capture" && <CaptureScreen />}
       {screen === "pricing" && isCompanyOwner !== false && <PricingScreen />}
