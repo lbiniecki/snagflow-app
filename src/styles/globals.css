@@ -52,17 +52,20 @@
 }
 
 /* ── Light theme: auto via OS preference ────────────────────── */
+/* Warm cream palette, Claude.ai-style. Cards are paler than the
+   page bg so they lift off the background without a hard border.
+   Text stays near-black (zinc) — reads cleanly on the warm tones. */
 @media (prefers-color-scheme: light) {
   :root:not([data-theme="dark"]) {
     color-scheme: light;
-    --bg:             #FAFAFA;
-    --card:           #FFFFFF;
-    --card-hover:     #F4F4F5;
-    --border:         #E4E4E7;
-    --text-primary:   #18181B;
-    --text-secondary: #52525B;
-    --text-muted:     #71717A;
-    --fab-shadow:     0 6px 16px rgba(0, 0, 0, 0.2);
+    --bg:             #F5F0E8;   /* warm cream page bg */
+    --card:           #FAF7F0;   /* lighter cream for cards — lifts off bg */
+    --card-hover:     #F0EBE0;
+    --border:         #E8DFCE;   /* subtle warm tan border */
+    --text-primary:   #1F1B16;   /* warm near-black (not pure zinc) */
+    --text-secondary: #55504A;
+    --text-muted:     #8A8578;
+    --fab-shadow:     0 6px 16px rgba(31, 27, 22, 0.18);
 
     --color-info-bg:     rgba(59, 130, 246, 0.10);
     --color-success-bg:  rgba(22, 163, 74, 0.10);
@@ -74,14 +77,14 @@
 /* ── Manual overrides (wire up a Settings toggle later) ─────── */
 [data-theme="light"] {
   color-scheme: light;
-  --bg:             #FAFAFA;
-  --card:           #FFFFFF;
-  --card-hover:     #F4F4F5;
-  --border:         #E4E4E7;
-  --text-primary:   #18181B;
-  --text-secondary: #52525B;
-  --text-muted:     #71717A;
-  --fab-shadow:     0 6px 16px rgba(0, 0, 0, 0.2);
+  --bg:             #F5F0E8;
+  --card:           #FAF7F0;
+  --card-hover:     #F0EBE0;
+  --border:         #E8DFCE;
+  --text-primary:   #1F1B16;
+  --text-secondary: #55504A;
+  --text-muted:     #8A8578;
+  --fab-shadow:     0 6px 16px rgba(31, 27, 22, 0.18);
   --color-info-bg:     rgba(59, 130, 246, 0.10);
   --color-success-bg:  rgba(22, 163, 74, 0.10);
   --color-warning-bg:  rgba(217, 119, 6, 0.12);
@@ -106,6 +109,18 @@ html, body {
   font-family: 'DM Sans', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   overscroll-behavior: none;
+}
+
+/* Defensive: anything text-shaped that doesn't declare its own colour
+   inherits the theme-aware primary text colour. This is the durable
+   fix for the "invisible white text on white bg in light mode" class
+   of bugs — no need to patch each h1/h2/p every time. Components that
+   need a different colour simply declare it (e.g. text-brand,
+   text-[var(--text3)]) and that wins the cascade. */
+@layer base {
+  h1, h2, h3, h4, h5, h6, p {
+    color: var(--text-primary);
+  }
 }
 
 /* Safe area for notched phones */

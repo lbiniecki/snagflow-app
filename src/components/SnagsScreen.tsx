@@ -428,6 +428,56 @@ export default function SnagsScreen() {
     }
   };
 
+  // Download every photo on an item as individual files (not zipped).
+  // Each save is sequential with a short delay — most browsers throttle
+  // back-to-back programmatic downloads unless they're spaced out, and
+  // Safari/iOS is especially strict. 200ms is the sweet spot; any
+  // shorter and the browser drops downloads 2+ silently.
+  const saveAllPhotos = async (s: Snag) => {
+    // photo_urls is a 4-slot array; nulls represent empty slots
+    const slots = (s.photo_urls ?? []).map((url, i) => ({ url, slot: i + 1 }));
+    const present = slots.filter((x) => x.url);
+
+    // Fallback to single photo_url when photo_urls hasn't been populated
+    // (older snag rows pre the photo_urls backend change)
+    if (present.length === 0 && s.photo_url) {
+      return savePhoto(s.photo_url, {
+        snagDate: s.created_at,
+        photoNo: 1,
+        itemNo: s.snag_no,
+      });
+    }
+
+    if (present.length === 0) {
+      showToast("No photos to download");
+      return;
+    }
+
+    showToast(`Saving ${present.length} photo${present.length === 1 ? "" : "s"}…`);
+    for (let i = 0; i < present.length; i++) {
+      const { url, slot } = present[i];
+      try {
+        const resp = await fetch(url!);
+        const blob = await resp.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = blobUrl;
+        a.download = buildPhotoFilename(s.created_at, slot, s.snag_no, false);
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
+      } catch {
+        // Continue with others — don't abort the batch on one failure
+      }
+      // Space downloads out. Skip the delay on the last one.
+      if (i < present.length - 1) {
+        await new Promise((r) => setTimeout(r, 200));
+      }
+    }
+    showToast(`Downloaded ${present.length} photo${present.length === 1 ? "" : "s"}`);
+  };
+
   // Hide bottom nav when any modal is open
   const modalOpen = !!editSnag || showReport || showEmailModal;
   const visitClosed = currentVisit?.status === "closed";
@@ -592,21 +642,11 @@ export default function SnagsScreen() {
                 >
                   {s.status === "open" ? "Close" : "Reopen"}
                 </button>
-                {s.status === "open" && (
+                {((s.photo_urls ?? []).some(Boolean) || s.photo_url) && (
                   <button
-                    onClick={() => startCloseWithPhoto(s.id)}
-                    disabled={closingSnagId === s.id}
-                    className="p-2 rounded-lg bg-brand/20 text-brand hover:bg-brand/30 transition-colors"
-                    title="Close with photo"
-                  >
-                    <Camera className="w-4 h-4" />
-                  </button>
-                )}
-                {s.photo_url && (
-                  <button
-                    onClick={() => savePhoto(s.photo_url!, { snagDate: s.created_at, photoNo: 1, itemNo: s.snag_no })}
+                    onClick={() => saveAllPhotos(s)}
                     className="p-2 rounded-lg bg-[var(--surface)] text-[var(--text2)] hover:text-[var(--text-primary)] transition-colors"
-                    title="Save photo"
+                    title="Download all photos"
                   >
                     <Download className="w-4 h-4" />
                   </button>

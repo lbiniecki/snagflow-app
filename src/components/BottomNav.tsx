@@ -1,18 +1,19 @@
 "use client";
 
 import { useStore } from "@/lib/store";
-import { FolderOpen, ClipboardList, Camera, Settings } from "lucide-react";
+import { FolderOpen, Settings } from "lucide-react";
 import clsx from "clsx";
 
+// Bottom nav is for always-available destinations. Visits & Capture
+// depend on a selected project/visit, so they don't belong here — use
+// the back arrow (ChevronLeft) in the page header to navigate up.
 const tabs = [
   { id: "projects" as const, label: "Projects", icon: FolderOpen },
-  { id: "visits" as const, label: "Visits", icon: ClipboardList },
-  { id: "capture" as const, label: "Capture", icon: Camera },
   { id: "settings" as const, label: "Settings", icon: Settings },
 ];
 
 export default function BottomNav({ active }: { active: string }) {
-  const { setScreen, currentProject, currentVisit } = useStore();
+  const { setScreen } = useStore();
 
   return (
     <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-[var(--bg2)] border-t border-[var(--border)] z-50"
@@ -21,18 +22,13 @@ export default function BottomNav({ active }: { active: string }) {
       <div className="flex">
         {tabs.map((tab) => {
           const Icon = tab.icon;
-          const disabled =
-            tab.id === "visits" && !currentProject ||
-            tab.id === "capture" && !currentVisit;
           return (
             <button
               key={tab.id}
-              onClick={() => !disabled && setScreen(tab.id)}
-              disabled={disabled}
+              onClick={() => setScreen(tab.id)}
               className={clsx(
                 "flex-1 flex flex-col items-center gap-1 py-2.5 text-[10px] font-medium transition-colors",
-                active === tab.id ? "text-brand" : "text-[var(--nav-inactive)]",
-                disabled && "opacity-30 cursor-not-allowed"
+                active === tab.id ? "text-brand" : "text-[var(--nav-inactive)]"
               )}
             >
               <Icon className="w-5 h-5" />
