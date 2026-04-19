@@ -451,14 +451,59 @@ export const reports = {
       { headers: { Authorization: `Bearer ${token}` } }
     );
     if (!res.ok) throw new Error("Failed to generate report");
+
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
     const visitSuffix = opts?.visitNo ? `-visit-${opts.visitNo}` : "";
-    a.download = `site-visit-report${visitSuffix}.pdf`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const filename = `site-visit-report${visitSuffix}.pdf`;
+
+    // ── Mobile vs desktop download handling ──────────────────────
+    //
+    // On desktop, programmatic `<a download>` clicks reliably save the
+    // PDF to the user's Downloads folder.
+    //
+    // On mobile (iOS Safari, iOS Chrome — which is WebKit under the
+    // hood — and most Android browsers) the `download` attribute is
+    // often ignored. The `.click()` either silently does nothing or
+    // navigates the current tab away. Users see "Report downloaded"
+    // but no file ever lands on the device.
+    //
+    // The reliable mobile pattern is to open the PDF in a new tab.
+    // The browser renders the PDF using its built-in viewer, and the
+    // user taps the native share button to save to Files (iOS) or
+    // Download (Android). Less seamless than desktop, but IT WORKS —
+    // which is the whole point.
+    //
+    // We also delay revokeObjectURL by 60s instead of calling it
+    // synchronously. On mobile the blob URL is used asynchronously by
+    // the new tab; revoking immediately can leave the tab with a
+    // broken reference.
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+    if (isMobile) {
+      // Open in new tab. The backend's Content-Disposition header hints
+      // "attachment" but mobile browsers typically show it inline anyway.
+      // That's fine — the user can then share → save.
+      const newTab = window.open(url, "_blank");
+      if (!newTab) {
+        // Popup blocked — fall back to navigating the current tab.
+        // The PDF will load in the current tab and the back button
+        // returns the user to the app.
+        window.location.href = url;
+      }
+    } else {
+      // Desktop: classic programmatic-link download.
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+
+    // Release the blob URL after a comfortable window. Can't revoke
+    // synchronously because mobile loads the URL asynchronously.
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
   },
 
   /**
