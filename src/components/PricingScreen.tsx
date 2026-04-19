@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useStore } from "@/lib/store";
+import { companies } from "@/lib/api";
 import { ChevronLeft, Check, X, Zap } from "lucide-react";
 import clsx from "clsx";
 import BottomNav from "./BottomNav";
@@ -129,6 +130,17 @@ export default function PricingScreen() {
   const [annual, setAnnual] = useState(false);
   const [loading, setLoading] = useState<string | null>(null);
   const [compareOpen, setCompareOpen] = useState(false);
+
+  // Current plan slug — fetched on mount. Used to mark the matching
+  // plan card as "Current Plan" and to hide the Enterprise CTA if the
+  // user is already on Enterprise. Starts as null (unknown) → briefly
+  // during load all CTAs show as "Upgrade to X", which is fine.
+  const [currentPlan, setCurrentPlan] = useState<string | null>(null);
+  useEffect(() => {
+    companies.getMyCompany()
+      .then((c) => setCurrentPlan(c?.plan ?? "free"))
+      .catch(() => setCurrentPlan("free"));
+  }, []);
 
   const handleCheckout = async (priceId: string | null) => {
     if (!priceId) return;
@@ -300,8 +312,22 @@ export default function PricingScreen() {
                   </p>
                 )}
 
-                {/* CTA */}
-                {priceId ? (
+                {/* CTA — three states per card:
+                      1. This IS the user's current plan → disabled "Current Plan"
+                      2. Free plan (no priceId) when user is on something else → disabled "Included"
+                      3. Any other plan → "Upgrade to X" / "Downgrade to X" / "Switch to X"
+                    For case 3 we keep the simple "Upgrade to X" copy since
+                    downgrade-via-checkout is an unusual path (Stripe portal is
+                    the better route for plan changes) — but the button still
+                    fires the checkout flow correctly if clicked. */}
+                {currentPlan === plan.slug ? (
+                  <button
+                    disabled
+                    className="w-full py-2.5 rounded-lg text-xs font-semibold bg-[var(--surface)] text-[var(--text3)]"
+                  >
+                    Current Plan
+                  </button>
+                ) : priceId ? (
                   <button
                     onClick={() => handleCheckout(priceId)}
                     disabled={isLoading}
@@ -316,11 +342,14 @@ export default function PricingScreen() {
                     {isLoading ? "Loading..." : `Upgrade to ${plan.name}`}
                   </button>
                 ) : (
+                  // Free plan when user is NOT on Free — no upgrade path
+                  // (can't "upgrade" to a lower tier via Stripe checkout) and
+                  // also not their current plan. Show a neutral disabled state.
                   <button
                     disabled
                     className="w-full py-2.5 rounded-lg text-xs font-semibold bg-[var(--surface)] text-[var(--text3)]"
                   >
-                    Current Plan
+                    Included
                   </button>
                 )}
               </div>
@@ -367,7 +396,7 @@ export default function PricingScreen() {
                       {row.values.map((v, i) => (
                         <td
                           key={i}
-                          className="text-center py-2 px-2 border-t border-[var(--border)] whitespace-nowrap"
+                          className="text-center py-2 px-2 border-t border-[var(--border)] whitespace-nowrap text-[var(--text-primary)]"
                         >
                           {v}
                         </td>
@@ -424,7 +453,11 @@ export default function PricingScreen() {
           )}
         </div>
 
-        {/* Enterprise */}
+        {/* Enterprise — the one "plan" that doesn't have a Stripe price ID.
+            Renders as a contact-sales block for everyone except customers
+            already on Enterprise, who instead see a "You're on Enterprise"
+            confirmation so they don't wonder why the main plan grid doesn't
+            include their tier. */}
         <div className="mt-6 text-center border border-[var(--border)] rounded-2xl p-5 bg-[var(--bg2)]">
           <Zap className="w-6 h-6 text-brand mx-auto mb-2" />
           <h3 className="text-sm font-bold mb-1 text-[var(--text-primary)]">Enterprise</h3>
@@ -433,12 +466,18 @@ export default function PricingScreen() {
             and dedicated support. Starts at €299+/mo — custom pricing based on
             your team size and needs.
           </p>
-          <a
-            href="mailto:sales@voxsite.app?subject=VoxSite%20Enterprise%20enquiry"
-            className="inline-block px-5 py-2 bg-brand/10 text-brand text-xs font-semibold rounded-lg hover:bg-brand/20 transition-colors"
-          >
-            Contact Sales
-          </a>
+          {currentPlan === "enterprise" ? (
+            <div className="inline-block px-5 py-2 bg-brand/10 text-brand text-xs font-semibold rounded-lg">
+              ✓ You're on Enterprise
+            </div>
+          ) : (
+            <a
+              href="mailto:sales@voxsite.app?subject=VoxSite%20Enterprise%20enquiry"
+              className="inline-block px-5 py-2 bg-brand/10 text-brand text-xs font-semibold rounded-lg hover:bg-brand/20 transition-colors"
+            >
+              Contact Sales
+            </a>
+          )}
         </div>
 
         {/* Manage subscription */}

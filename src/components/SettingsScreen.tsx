@@ -360,6 +360,14 @@ export default function SettingsScreen() {
   // Count total seats used (members + pending invites)
   const totalSeats = members.length + pendingInvites.length;
 
+  // Render UNLIMITED sentinel (999999) as "Unlimited" — keeps the UI clean
+  // for Enterprise and any other plan that uses the sentinel. Threshold is
+  // 100000 rather than exactly 999999 so it's robust to minor tweaks of
+  // the sentinel value in plan_limits.py.
+  const maxUsersDisplay = (company && company.max_users >= 100_000)
+    ? "Unlimited"
+    : (company?.max_users ?? 0).toString();
+
   return (
     <div>
       {/* Hidden file input */}
@@ -536,7 +544,7 @@ export default function SettingsScreen() {
                   <span className="text-xs text-[var(--text3)]">Plan:</span>
                   <span className="text-xs font-semibold text-brand uppercase">{company.plan}</span>
                   <span className="text-xs text-[var(--text3)]">•</span>
-                  <span className="text-xs text-[var(--text3)]">{totalSeats}/{company.max_users} users</span>
+                  <span className="text-xs text-[var(--text3)]">{totalSeats}/{maxUsersDisplay} users</span>
                 </div>
 
                 {/* Manage Subscription — owner-only; visible only for paid
@@ -772,7 +780,7 @@ export default function SettingsScreen() {
             {/* Team Members */}
             <section>
               <h3 className="text-xs font-semibold text-[var(--text2)] uppercase tracking-wider mb-3 flex items-center gap-2">
-                <Users className="w-4 h-4" /> Team Members ({totalSeats}/{company.max_users})
+                <Users className="w-4 h-4" /> Team Members ({totalSeats}/{maxUsersDisplay})
               </h3>
               <div className="bg-[var(--bg2)] border border-[var(--border)] rounded-xl p-4">
                 {/* ── Active members ── */}
