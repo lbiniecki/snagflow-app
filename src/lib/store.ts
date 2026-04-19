@@ -41,6 +41,12 @@ interface AppState {
   filter: "all" | "open" | "closed";
   setFilter: (filter: AppState["filter"]) => void;
 
+  // Edit target — when not null, CaptureScreen operates in edit mode
+  // and pre-fills from this snag instead of creating a new one. Cleared
+  // on successful save, explicit discard, or navigation away.
+  editingSnag: Snag | null;
+  setEditingSnag: (snag: Snag | null) => void;
+
   // UI
   loading: boolean;
   setLoading: (loading: boolean) => void;
@@ -83,6 +89,10 @@ export const useStore = create<AppState>((set) => ({
   setSnags: (snags) => set({ snags }),
   filter: "all",
   setFilter: (filter) => set({ filter }),
+
+  // Edit target
+  editingSnag: null,
+  setEditingSnag: (editingSnag) => set({ editingSnag }),
 
   // UI
   loading: false,

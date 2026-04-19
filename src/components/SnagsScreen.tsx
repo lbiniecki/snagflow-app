@@ -8,7 +8,6 @@ import { getPendingForVisit, getPendingSnags, type PendingSnag } from "@/lib/off
 import {
   ChevronLeft, FileText, Plus, Pencil, Trash2, Camera,
   MapPin, Download, X, Mic, WifiOff, CloudUpload, Mail,
-  Image as ImageIcon,
 } from "lucide-react";
 import clsx from "clsx";
 import BottomNav from "./BottomNav";
@@ -23,22 +22,10 @@ export default function SnagsScreen() {
   const {
     currentProject, setScreen, snags, setSnags,
     filter, setFilter, showToast, loading, setLoading,
-    currentVisit,
+    currentVisit, setEditingSnag,
   } = useStore();
 
   const [showReport, setShowReport] = useState(false);
-  const [editSnag, setEditSnag] = useState<typeof snags[0] | null>(null);
-  const [editNote, setEditNote] = useState("");
-  const [editLoc, setEditLoc] = useState("");
-  const [editPri, setEditPri] = useState<"low" | "medium" | "high">("medium");
-  // Newly-picked photos to attach on save, pre-compressed
-  const [editNewPhotos, setEditNewPhotos] = useState<File[]>([]);
-  const [editUploadingPhotos, setEditUploadingPhotos] = useState(false);
-  // When a slot number is here, that slot's X is showing a loading indicator
-  // and its delete request is in flight. Used only for UI feedback.
-  const [editDeletingSlot, setEditDeletingSlot] = useState<number | null>(null);
-  const editPhotoInputRef = useRef<HTMLInputElement>(null);
-  const editGalleryRef = useRef<HTMLInputElement>(null);
   const [downloading, setDownloading] = useState(false);
   const [weather, setWeather] = useState("");
   const [visitNo, setVisitNo] = useState("");
@@ -140,116 +127,6 @@ export default function SnagsScreen() {
     }
   };
 
-  const saveEdit = async () => {
-    if (!editSnag) return;
-    try {
-      // 1. Patch text fields first — cheap, can fail fast
-      await snagsApi.update(editSnag.id, { note: editNote, location: editLoc, priority: editPri });
-
-      // 2. If the user staged new photos, upload them. We do this AFTER the
-      // text patch so a failed photo upload doesn't lose the text edits.
-      // The response carries the updated photo_count AND photo_urls, so we
-      // use it to keep the list row in sync.
-      let serverSnag = editSnag;
-      if (editNewPhotos.length > 0) {
-        setEditUploadingPhotos(true);
-        try {
-          serverSnag = await snagsApi.addPhotos(editSnag.id, editNewPhotos);
-        } finally {
-          setEditUploadingPhotos(false);
-        }
-      }
-
-      // 3. Merge our text-edit changes into whatever the server returned.
-      // `serverSnag` may be from addPhotos (has fresh photo_urls/count) or
-      // may still be the pre-edit editSnag (if no new photos were staged).
-      // Either way we overlay the text fields we just saved.
-      const merged = {
-        ...serverSnag,
-        note: editNote,
-        location: editLoc,
-        priority: editPri,
-      };
-      setSnags(snags.map((s) => (s.id === editSnag.id ? merged : s)));
-
-      setEditSnag(null);
-      setEditNewPhotos([]);
-      if (editPhotoInputRef.current) editPhotoInputRef.current.value = "";
-      if (editGalleryRef.current) editGalleryRef.current.value = "";
-      showToast(editNewPhotos.length > 0 ? "Item updated with new photos" : "Item updated");
-    } catch (err: any) {
-      showToast(err.message);
-    }
-  };
-
-  /**
-   * File picker handler for the edit-modal photo section. Compresses each
-   * selected image and appends to editNewPhotos, respecting the per-snag
-   * 4-photo cap.
-   */
-  const handleEditPhotoPick = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0 || !editSnag) return;
-    // Derive existing count from photo_urls so it stays accurate after
-    // in-session deletions (handleDeleteExistingPhoto updates editSnag).
-    const existing = (editSnag.photo_urls ?? []).filter(Boolean).length;
-    const remaining = 4 - existing - editNewPhotos.length;
-    if (remaining <= 0) {
-      showToast("This item already has 4 photos");
-      return;
-    }
-    const toAdd = files.slice(0, remaining);
-    if (toAdd.length < files.length) {
-      showToast(`Only ${toAdd.length} photo(s) added — 4-photo limit`);
-    }
-    try {
-      const compressed = await Promise.all(
-        toAdd.map((f) => compressImage(f).catch(() => f))
-      );
-      setEditNewPhotos((prev) => [...prev, ...compressed]);
-    } catch {
-      showToast("Failed to prepare photos");
-    } finally {
-      // Reset the inputs so the same files can be re-picked if the user removes and re-adds
-      if (editPhotoInputRef.current) editPhotoInputRef.current.value = "";
-      if (editGalleryRef.current) editGalleryRef.current.value = "";
-    }
-  };
-
-  /**
-   * Remove an already-saved photo from a snag. Slot is 1-based (matches the
-   * backend endpoint's URL param).
-   *
-   * Policy decision — we delete immediately instead of queuing the delete
-   * for the next Save. That matches the instant-remove behaviour for pending
-   * (new) photos and how mobile users expect an X button to work. The
-   * confirm dialog would be overkill for something that's one tap to
-   * restage if mistaken.
-   */
-  const handleDeleteExistingPhoto = async (slot: number) => {
-    if (!editSnag || editDeletingSlot !== null) return;
-
-    const ok = await confirm({
-      title: "Remove this photo?",
-      message: "The photo will be permanently deleted from this item. You can always add a new one.",
-      confirmLabel: "Remove photo",
-      tone: "destructive",
-    });
-    if (!ok) return;
-
-    setEditDeletingSlot(slot);
-    try {
-      const updated = await snagsApi.deletePhoto(editSnag.id, slot);
-      setEditSnag(updated);
-      setSnags(snags.map((s) => s.id === updated.id ? updated : s));
-      showToast("Photo removed");
-    } catch (err: any) {
-      showToast(err?.message || "Failed to remove photo");
-    } finally {
-      setEditDeletingSlot(null);
-    }
-  };
-
   const handleDownloadPdf = async () => {
     if (!currentProject) return;
     setDownloading(true);
@@ -343,15 +220,6 @@ export default function SnagsScreen() {
         }
       });
     }
-  };
-
-  const openEdit = (s: typeof snags[0]) => {
-    setEditSnag(s);
-    setEditNote(s.note);
-    setEditLoc(s.location || "");
-    setEditPri(s.priority);
-    // Clear any lingering pending photos from a previous open
-    setEditNewPhotos([]);
   };
 
   /**
@@ -479,7 +347,7 @@ export default function SnagsScreen() {
   };
 
   // Hide bottom nav when any modal is open
-  const modalOpen = !!editSnag || showReport || showEmailModal;
+  const modalOpen = showReport || showEmailModal;
   const visitClosed = currentVisit?.status === "closed";
 
   return (
@@ -651,7 +519,11 @@ export default function SnagsScreen() {
                     <Download className="w-4 h-4" />
                   </button>
                 )}
-                <button onClick={() => openEdit(s)} className="p-2 rounded-lg bg-[var(--surface)] text-[var(--text2)] hover:text-[var(--text-primary)] transition-colors">
+                <button
+                  onClick={() => { setEditingSnag(s); setScreen("capture"); }}
+                  className="p-2 rounded-lg bg-[var(--surface)] text-[var(--text2)] hover:text-[var(--text-primary)] transition-colors"
+                  title="Edit item"
+                >
                   <Pencil className="w-4 h-4" />
                 </button>
                 <button onClick={() => deleteSnag(s)} className="p-2 rounded-lg bg-critical/10 text-critical hover:bg-critical/20 transition-colors" title="Delete item">
@@ -824,206 +696,6 @@ export default function SnagsScreen() {
                 <p className="text-gray-400 italic text-[10px] py-2">All items resolved!</p>
               )}
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Edit modal */}
-      {editSnag && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-end justify-center animate-fade-in">
-          <div className="w-full max-w-[480px] bg-[var(--bg2)] rounded-t-2xl p-5 animate-slide-up">
-            <div className="w-10 h-1 bg-[var(--border)] rounded-full mx-auto mb-4" />
-            <div className="flex justify-between items-center mb-5">
-              <h3 className="text-lg font-bold text-[var(--text-primary)]">Edit Item</h3>
-              <button
-                onClick={() => { setEditSnag(null); setEditNewPhotos([]); }}
-                className="text-[var(--text3)]"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="space-y-3 mb-5">
-              <div>
-                <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">Description</label>
-                <textarea value={editNote} onChange={(e) => setEditNote(e.target.value)} rows={3}
-                  className="w-full px-3.5 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors resize-none"
-                />
-              </div>
-              <div>
-                <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">Location</label>
-                <input value={editLoc} onChange={(e) => setEditLoc(e.target.value)}
-                  className="w-full px-3.5 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
-                />
-              </div>
-              <div>
-                <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">Priority</label>
-                <div className="flex gap-2">
-                  {(["low", "medium", "high"] as const).map((p) => (
-                    <button
-                      key={p}
-                      onClick={() => setEditPri(p)}
-                      className={clsx(
-                        "flex-1 py-2.5 rounded-lg text-xs font-semibold border transition-all capitalize",
-                        editPri === p
-                          ? p === "high" ? "border-critical text-critical bg-critical/10"
-                          : p === "medium" ? "border-warning text-warning bg-warning/10"
-                          : "border-slate-500 text-slate-500 bg-slate-500/10"
-                          : "border-[var(--border)] text-[var(--text3)] bg-[var(--bg)]"
-                      )}
-                    >
-                      {p}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Photos */}
-            {(() => {
-              // existingPhotos is a 4-element slot-ordered list from the backend.
-              // Some slots may be null (empty). We render the non-null ones as
-              // thumbnails with a remove button that calls the backend
-              // DELETE /snags/{id}/photos/{slot} endpoint.
-              const existingSlots: (string | null)[] = editSnag?.photo_urls ?? [];
-              const existingPhotos: { slot: number; url: string }[] = existingSlots
-                .map((url, idx) => (url ? { slot: idx + 1, url } : null))
-                .filter((x): x is { slot: number; url: string } => x !== null);
-
-              const existing = existingPhotos.length;
-              const pending = editNewPhotos.length;
-              const total = existing + pending;
-              const remaining = Math.max(0, 4 - total);
-
-              return (
-                <div className="mb-5">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider">
-                      Photos
-                    </label>
-                    <span className="text-[10px] text-[var(--text3)]">
-                      {total} of 4
-                      {pending > 0 && ` (${pending} new)`}
-                    </span>
-                  </div>
-
-                  {/* Existing photos + pending new photos, in one strip */}
-                  {(existing > 0 || pending > 0) && (
-                    <div className="flex flex-wrap gap-2 mb-2">
-                      {existingPhotos.map(({ slot, url }) => (
-                        <div
-                          key={`existing-${slot}`}
-                          className="relative w-16 h-16 rounded-lg overflow-hidden border border-[var(--border)]"
-                        >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={url} alt="" className="w-full h-full object-cover" />
-                          {/* Download button — bottom-left */}
-                          <button
-                            onClick={() => savePhoto(url, { snagDate: editSnag?.created_at || "", photoNo: slot, itemNo: editSnag?.snag_no })}
-                            className="absolute bottom-0.5 left-0.5 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center"
-                            aria-label={`Download photo ${slot}`}
-                            title="Download this photo"
-                          >
-                            <Download className="w-3 h-3" />
-                          </button>
-                          {/* Delete button — top-right */}
-                          <button
-                            onClick={() => handleDeleteExistingPhoto(slot)}
-                            disabled={editDeletingSlot === slot}
-                            className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center disabled:opacity-50"
-                            aria-label={`Remove photo ${slot}`}
-                            title="Remove this photo"
-                          >
-                            {editDeletingSlot === slot ? (
-                              <span className="block w-2 h-2 rounded-full bg-white animate-pulse" />
-                            ) : (
-                              <X className="w-3 h-3" />
-                            )}
-                          </button>
-                        </div>
-                      ))}
-
-                      {editNewPhotos.map((f, i) => {
-                        const objectUrl = URL.createObjectURL(f);
-                        return (
-                          <div
-                            key={`pending-${f.name}-${i}`}
-                            className="relative w-16 h-16 rounded-lg overflow-hidden border border-brand/60"
-                            title="New photo (will upload on save)"
-                          >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={objectUrl} alt="" className="w-full h-full object-cover" />
-                            <span className="absolute bottom-0 left-0 right-0 text-[8px] text-center bg-brand/80 text-white py-0.5 font-semibold uppercase">
-                              New
-                            </span>
-                            <button
-                              onClick={() => {
-                                setEditNewPhotos((prev) => prev.filter((_, idx) => idx !== i));
-                                URL.revokeObjectURL(objectUrl);
-                              }}
-                              className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center"
-                              aria-label="Remove pending photo"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {/* Add-more picker */}
-                  {remaining > 0 ? (
-                    <div className="flex gap-2">
-                      {/* Camera input — capture="environment" forces rear camera on Android/iOS */}
-                      <input
-                        ref={editPhotoInputRef}
-                        type="file"
-                        accept="image/*"
-                        capture="environment"
-                        onChange={handleEditPhotoPick}
-                        className="hidden"
-                        id="edit-photo-camera"
-                      />
-                      {/* Gallery input — no capture, opens file/gallery picker */}
-                      <input
-                        ref={editGalleryRef}
-                        type="file"
-                        accept="image/*"
-                        onChange={handleEditPhotoPick}
-                        className="hidden"
-                        id="edit-photo-gallery"
-                      />
-                      <label
-                        htmlFor="edit-photo-camera"
-                        className="flex-1 flex items-center justify-center gap-1.5 h-11 border border-dashed border-[var(--border)] rounded-lg text-xs font-semibold text-[var(--text2)] hover:text-[var(--text-primary)] hover:border-brand transition-colors cursor-pointer"
-                      >
-                        <Camera className="w-4 h-4" />
-                        Take Photo
-                      </label>
-                      <label
-                        htmlFor="edit-photo-gallery"
-                        className="flex-1 flex items-center justify-center gap-1.5 h-11 border border-dashed border-[var(--border)] rounded-lg text-xs font-semibold text-[var(--text2)] hover:text-[var(--text-primary)] hover:border-brand transition-colors cursor-pointer"
-                      >
-                        <ImageIcon className="w-4 h-4" />
-                        Gallery
-                      </label>
-                    </div>
-                  ) : (
-                    <p className="text-[11px] text-[var(--text3)] italic">
-                      This item has the maximum of 4 photos. Remove one above to add another.
-                    </p>
-                  )}
-                </div>
-              );
-            })()}
-
-            <button
-              onClick={saveEdit}
-              disabled={editUploadingPhotos}
-              className="w-full h-12 bg-brand hover:bg-brand-light text-white font-semibold rounded-lg transition-all disabled:opacity-50"
-            >
-              {editUploadingPhotos ? "Uploading photos…" : "Save Changes"}
-            </button>
           </div>
         </div>
       )}
