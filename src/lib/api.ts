@@ -76,6 +76,16 @@ export interface Company {
   report_include_rectification?: boolean;    // default false
   report_include_cover_page?: boolean;       // default true (Phase 2 will use)
   report_photos_per_page?: number;           // 1 | 2 | 4, default 2 (Phase 2 will use)
+  // ── Subscription status (payment failure handling) ───────────
+  // subscription_status drives the past-due banner in Settings.
+  // - 'active':   paying normally, no banner
+  // - 'past_due': last invoice failed, Stripe retrying; owner sees
+  //               banner but team works normally
+  // - 'canceled': sub is gone, plan reverted to 'free'
+  subscription_status?: "active" | "past_due" | "canceled";
+  past_due_since?: string | null;             // ISO timestamp, set when past_due began
+  past_due_last_notified_at?: string | null;  // ISO — last time owner was emailed
+  past_due_invoice_id?: string | null;        // Stripe invoice id (for dedup scope)
 }
 
 export interface CompanyMember {

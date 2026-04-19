@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useStore } from "@/lib/store";
-import { companies, profiles } from "@/lib/api";
+import { companies, profiles, billing } from "@/lib/api";
 import type { Company, CompanyMember } from "@/lib/api";
 import {
   ChevronLeft, Upload, Trash2, UserPlus, X, Building2, Users, Image, User,
-  Clock, Mail, FileText,
+  Clock, Mail, FileText, AlertCircle, CreditCard,
 } from "lucide-react";
 import BottomNav from "./BottomNav";
 import { useConfirm } from "./ConfirmDialog";
@@ -158,6 +158,20 @@ export default function SettingsScreen() {
       showToast("Company name updated");
     } catch (err: any) {
       showToast(err.message);
+    }
+  };
+
+  // Opens the Stripe Customer Portal in the same tab — used by the
+  // past-due banner and the "Manage Subscription" button. Both paths
+  // are gated to company owners only. The backend /billing/portal
+  // endpoint also enforces ownership, so even if a non-owner somehow
+  // triggered this it would 400 cleanly.
+  const handleOpenPortal = async () => {
+    try {
+      const res = await billing.createPortal();
+      window.location.href = res.portal_url;
+    } catch (err: any) {
+      showToast(err.message || "Could not open billing portal");
     }
   };
 
@@ -440,6 +454,53 @@ export default function SettingsScreen() {
               </div>
             </section>
 
+            {/* ── Past-due payment banner (audit #5) ────────────────────
+                Shown ONLY to company owners. Members continue working
+                normally during the Stripe retry window (per design).
+                Stripe auto-retries failed payments for ~3 weeks; during
+                that time we flag past_due but don't degrade access. The
+                owner sees this banner + gets emails prompting them to
+                update the card. */}
+            {company.is_owner && company.subscription_status === "past_due" && (
+              <section className="mb-6">
+                <div className="bg-warning/10 border border-warning/40 rounded-xl p-4 animate-fade-in">
+                  <div className="flex gap-3">
+                    <AlertCircle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-bold text-[var(--text-primary)] mb-1">
+                        Payment issue with your subscription
+                      </h3>
+                      <p className="text-xs text-[var(--text2)] leading-relaxed mb-3">
+                        We weren't able to charge your card for your most recent
+                        {" "}<span className="font-semibold uppercase">{company.plan}</span>{" "}
+                        invoice. Your team can keep working normally — Stripe will
+                        automatically retry the payment over the next few weeks.
+                        If retries all fail, your subscription will be cancelled
+                        and you'll drop to the Free plan.
+                        {(() => {
+                          if (!company.past_due_since) return null;
+                          const daysSince = Math.max(
+                            0,
+                            Math.floor((Date.now() - new Date(company.past_due_since).getTime()) / 86_400_000)
+                          );
+                          if (daysSince === 0) return " (flagged today)";
+                          if (daysSince === 1) return " (flagged 1 day ago)";
+                          return ` (flagged ${daysSince} days ago)`;
+                        })()}
+                      </p>
+                      <button
+                        onClick={handleOpenPortal}
+                        className="inline-flex items-center gap-2 px-3.5 py-2 bg-warning text-white text-xs font-semibold rounded-lg hover:opacity-90 transition-opacity"
+                      >
+                        <CreditCard className="w-3.5 h-3.5" />
+                        Update payment method
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            )}
+
             {/* Company Info */}
             <section>
               <h3 className="text-xs font-semibold text-[var(--text2)] uppercase tracking-wider mb-3 flex items-center gap-2">
@@ -477,6 +538,20 @@ export default function SettingsScreen() {
                   <span className="text-xs text-[var(--text3)]">•</span>
                   <span className="text-xs text-[var(--text3)]">{totalSeats}/{company.max_users} users</span>
                 </div>
+
+                {/* Manage Subscription — owner-only; visible only for paid
+                    plans (free has no Stripe subscription to manage, and
+                    enterprise is manually managed by us). Opens the Stripe
+                    Customer Portal for card updates, plan changes, invoices. */}
+                {company.is_owner && company.plan !== "free" && company.plan !== "enterprise" && (
+                  <button
+                    onClick={handleOpenPortal}
+                    className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 bg-[var(--bg)] border border-[var(--border)] hover:border-brand hover:text-brand text-xs font-semibold text-[var(--text-primary)] rounded-lg transition-colors"
+                  >
+                    <CreditCard className="w-3.5 h-3.5" />
+                    Manage Subscription
+                  </button>
+                )}
               </div>
             </section>
 
