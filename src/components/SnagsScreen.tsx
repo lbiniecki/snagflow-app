@@ -2,16 +2,15 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useStore } from "@/lib/store";
-import { snags as snagsApi, reports as reportsApi, transcription, siteVisits as visitsApi } from "@/lib/api";
+import { snags as snagsApi, reports as reportsApi, siteVisits as visitsApi } from "@/lib/api";
 import { useOnlineStatus } from "@/lib/useOnlineStatus";
 import { getPendingForVisit, getPendingSnags, type PendingSnag } from "@/lib/offlineStore";
 import {
   ChevronLeft, FileText, Plus, Pencil, Trash2, Camera,
-  MapPin, Download, X, Mic, WifiOff, CloudUpload, Mail,
+  MapPin, Download, X, WifiOff, CloudUpload, Mail,
 } from "lucide-react";
 import clsx from "clsx";
 import BottomNav from "./BottomNav";
-import { useAudioRecorder } from "@/lib/useAudioRecorder";
 import { compressImage } from "@/lib/compressImage";
 import { useConfirm } from "./ConfirmDialog";
 
@@ -27,11 +26,6 @@ export default function SnagsScreen() {
 
   const [showReport, setShowReport] = useState(false);
   const [downloading, setDownloading] = useState(false);
-  const [weather, setWeather] = useState("");
-  const [visitNo, setVisitNo] = useState("");
-  const [reportTranscribing, setReportTranscribing] = useState(false);
-  const [reportMicTarget, setReportMicTarget] = useState<"weather" | "visitNo" | null>(null);
-  const { isRecording, secondsLeft, startRecording, stopRecording, error: micError } = useAudioRecorder();
   const confirm = useConfirm();
 
   // Email-report modal state
@@ -133,8 +127,8 @@ export default function SnagsScreen() {
     try {
       await reportsApi.downloadPdf(currentProject.id, {
         visitId: currentVisit?.id,
-        weather,
-        visitNo: visitNo || String(currentVisit?.visit_no || ""),
+        weather: currentVisit?.weather || "",
+        visitNo: String(currentVisit?.visit_no || ""),
       });
       showToast("Report downloaded");
     } catch (err: any) {
@@ -174,8 +168,8 @@ export default function SnagsScreen() {
       const res = await reportsApi.emailReport(currentProject.id, {
         to: recipients,
         visitId: currentVisit?.id,
-        weather,
-        visitNo: visitNo || String(currentVisit?.visit_no || ""),
+        weather: currentVisit?.weather || "",
+        visitNo: String(currentVisit?.visit_no || ""),
         message: emailMessage.trim() || undefined,
       });
 
@@ -195,30 +189,6 @@ export default function SnagsScreen() {
       showToast(err.message || "Failed to send email");
     } finally {
       setSendingEmail(false);
-    }
-  };
-
-  const handleReportMic = async (
-    target: "weather" | "visitNo",
-    setter: React.Dispatch<React.SetStateAction<string>>
-  ) => {
-    if (isRecording) {
-      stopRecording();
-    } else {
-      setReportMicTarget(target);
-      await startRecording(async (blob) => {
-        setReportTranscribing(true);
-        try {
-          const res = await transcription.transcribe(blob);
-          setter((prev) => (prev ? prev + " " : "") + res.text);
-          showToast("Voice transcribed");
-        } catch (err: any) {
-          showToast("Transcription failed");
-        } finally {
-          setReportTranscribing(false);
-          setReportMicTarget(null);
-        }
-      });
     }
   };
 
@@ -368,7 +338,7 @@ export default function SnagsScreen() {
         </button>
         <div className="flex-1 text-center min-w-0">
           <h2 className="text-base font-semibold truncate text-[var(--text-primary)]">
-            {currentVisit ? `Visit #${currentVisit.visit_no}` : currentProject?.name}
+            {currentVisit ? `Visit #${currentVisit.visit_ref || currentVisit.visit_no}` : currentProject?.name}
           </h2>
           <p className="text-[11px] text-[var(--text3)]">
             {currentProject?.name}{currentVisit?.weather ? ` • ${currentVisit.weather}` : ""}
@@ -572,65 +542,6 @@ export default function SnagsScreen() {
               </div>
             </div>
 
-            {/* Report fields */}
-            <div className="space-y-3 mb-4">
-              <div>
-                <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">Visit / Report No.</label>
-                <div className="flex gap-2 items-center">
-                  <input
-                    value={visitNo}
-                    onChange={(e) => setVisitNo(e.target.value)}
-                    placeholder="e.g. 1 or 2026/04/13"
-                    className="flex-1 px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
-                  />
-                  <button
-                    onClick={() => handleReportMic("visitNo", setVisitNo)}
-                    disabled={reportTranscribing || (isRecording && reportMicTarget !== "visitNo")}
-                    className={clsx(
-                      "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all",
-                      isRecording && reportMicTarget === "visitNo"
-                        ? "bg-critical text-white animate-recording"
-                        : "bg-[var(--surface)] text-[var(--text2)] hover:text-[var(--text-primary)] hover:bg-[var(--bg3)]"
-                    )}
-                  >
-                    <Mic className="w-4 h-4" />
-                  </button>
-                </div>
-                {isRecording && reportMicTarget === "visitNo" && (
-                  <p className="text-xs text-critical font-semibold mt-1">● Recording… {secondsLeft}s</p>
-                )}
-              </div>
-              <div>
-                <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">Weather</label>
-                <div className="flex gap-2 items-center">
-                  <input
-                    value={weather}
-                    onChange={(e) => setWeather(e.target.value)}
-                    placeholder="e.g. Sunny, 18°C, light wind"
-                    className="flex-1 px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
-                  />
-                  <button
-                    onClick={() => handleReportMic("weather", setWeather)}
-                    disabled={reportTranscribing || (isRecording && reportMicTarget !== "weather")}
-                    className={clsx(
-                      "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all",
-                      isRecording && reportMicTarget === "weather"
-                        ? "bg-critical text-white animate-recording"
-                        : "bg-[var(--surface)] text-[var(--text2)] hover:text-[var(--text-primary)] hover:bg-[var(--bg3)]"
-                    )}
-                  >
-                    <Mic className="w-4 h-4" />
-                  </button>
-                </div>
-                {isRecording && reportMicTarget === "weather" && (
-                  <p className="text-xs text-critical font-semibold mt-1">● Recording… {secondsLeft}s</p>
-                )}
-                {reportTranscribing && (
-                  <p className="text-xs text-[var(--text2)] mt-1">Transcribing…</p>
-                )}
-              </div>
-            </div>
-
             {/* Report preview */}
             <div className="bg-white text-gray-900 rounded-xl p-5 text-[11px] leading-relaxed">
               <div className="flex justify-between items-start pb-3 mb-4 border-b-[3px] border-brand">
@@ -678,7 +589,7 @@ export default function SnagsScreen() {
                   <tbody>
                     {snags.filter((s) => s.status === "open").map((s, i) => (
                       <tr key={s.id}>
-                        <td className="p-1.5 border border-gray-200 font-mono font-semibold">{i + 1}</td>
+                        <td className="p-1.5 border border-gray-200 font-mono font-semibold">{(s as any).snag_no ?? i + 1}</td>
                         <td className="p-1.5 border border-gray-200">{s.note}</td>
                         <td className="p-1.5 border border-gray-200">{s.location || "—"}</td>
                         <td className="p-1.5 border border-gray-200">
@@ -732,7 +643,7 @@ export default function SnagsScreen() {
               <span className="text-[var(--text-primary)] font-semibold">
                 {currentProject?.name}
               </span>
-              {currentVisit && ` · Visit ${currentVisit.visit_no}`}
+              {currentVisit && ` · Visit ${currentVisit.visit_ref || currentVisit.visit_no}`}
               .
             </p>
 

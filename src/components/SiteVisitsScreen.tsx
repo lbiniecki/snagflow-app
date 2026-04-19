@@ -68,7 +68,7 @@ export default function SiteVisitsScreen() {
 
   const deleteVisit = async (v: typeof visits[0]) => {
     const ok = await confirm({
-      title: `Delete Visit ${v.visit_no}?`,
+      title: `Delete Visit ${v.visit_ref || v.visit_no}?`,
       message: "This will permanently remove the site visit and all items recorded on it. This can't be undone.",
       confirmLabel: "Delete visit",
       tone: "destructive",
@@ -146,7 +146,7 @@ export default function SiteVisitsScreen() {
                 <div className="flex justify-between items-start">
                   <div className="flex-1 min-w-0">
                     <h3 className="text-[15px] font-semibold text-[var(--text-primary)]">
-                      Site Visit #{v.visit_no}
+                      Site Visit #{v.visit_ref || v.visit_no}
                     </h3>
                     <div className="flex items-center gap-2 mt-1">
                       <span className="text-[11px] text-[var(--text3)] flex items-center gap-1">

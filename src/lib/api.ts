@@ -21,6 +21,7 @@ export interface SiteVisit {
   id: string;
   project_id: string;
   visit_no: number;
+  visit_ref?: string | null;  // Optional display override (e.g. "MIL-V01"); null/empty = use visit_no
   visit_date: string;
   weather: string;
   status: "open" | "closed";
@@ -273,6 +274,7 @@ export const siteVisits = {
 
   create(data: {
     project_id: string;
+    visit_ref?: string | null;
     weather?: string;
     inspector?: string;
     attendees?: string;

@@ -44,8 +44,24 @@ export default function VisitFormScreen() {
     (editingVisit as any)?.closing_notes ?? mostRecent?.closing_notes ?? DEFAULT_CLOSING
   );
 
+  // Visit-number display override. visit_no (integer, auto-increment)
+  // stays managed by the backend; this field lets users show a custom
+  // ref on the PDF and UI ("MIL-V01", "2026/04/13", etc.). Empty string
+  // = use the auto number. The backend normalises to NULL on save.
+  //
+  // In edit mode: seed from the stored visit_ref.
+  // In create mode: show the next auto-increment as a placeholder so
+  //   the user knows what they'll get if they leave it blank.
+  const nextVisitNo = editingVisit
+    ? editingVisit.visit_no
+    : (visits.reduce((max, v) => Math.max(max, v.visit_no), 0) + 1);
+  const [visitRef, setVisitRef] = useState<string>(
+    (editingVisit?.visit_ref ?? "") as string
+  );
+
   // Dirty-detection snapshot (edit mode only)
   const [originalSnapshot] = useState(() => ({
+    visitRef: (editingVisit?.visit_ref ?? "") as string,
     weather: editingVisit?.weather || "",
     attendees: editingVisit?.attendees || "",
     accessNotes: editingVisit?.access_notes || "",
@@ -69,6 +85,7 @@ export default function VisitFormScreen() {
   }, []);
 
   const isDirty = isEdit && (
+    visitRef !== originalSnapshot.visitRef ||
     weather !== originalSnapshot.weather ||
     attendees !== originalSnapshot.attendees ||
     accessNotes !== originalSnapshot.accessNotes ||
@@ -115,6 +132,7 @@ export default function VisitFormScreen() {
     setSaving(true);
     try {
       const updated = await visitsApi.update(editingVisit.id, {
+        visit_ref: visitRef,
         weather,
         attendees,
         access_notes: accessNotes,
@@ -144,6 +162,7 @@ export default function VisitFormScreen() {
     try {
       const created = await visitsApi.create({
         project_id: currentProject.id,
+        visit_ref: visitRef || null,
         weather,
         attendees,
         access_notes: accessNotes,
@@ -154,7 +173,8 @@ export default function VisitFormScreen() {
       });
       setVisits([created, ...visits]);
       setCurrentVisit(created);
-      showToast(`Visit #${created.visit_no} created`);
+      const createdLabel = created.visit_ref || created.visit_no;
+      showToast(`Visit #${createdLabel} created`);
       // Jump into Items to start inspecting — matches old behaviour
       setEditingVisit(null);
       setScreen("snags");
@@ -216,8 +236,27 @@ export default function VisitFormScreen() {
       </div>
 
       <div className="px-5 py-4 pb-8">
-        {/* Weather + mic */}
+        {/* Visit Number — optional display override.
+            Integer visit_no auto-increments on the backend; this field
+            lets users display a custom scheme on reports (e.g.
+            "MIL-V01", "2026/04/13"). Leaving it blank falls back to
+            the next auto number, shown as placeholder. */}
         <div className="mb-5 animate-slide-up">
+          <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-2">Visit Number</label>
+          <input
+            value={visitRef}
+            onChange={(e) => setVisitRef(e.target.value)}
+            placeholder={`${nextVisitNo}  (auto) — or type your own e.g. MIL-V01, 2026/04/13`}
+            maxLength={50}
+            className="w-full px-3.5 py-3 bg-[var(--bg2)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors"
+          />
+          <p className="text-[10px] text-[var(--text3)] mt-1">
+            Leave blank to use the auto-incrementing number ({nextVisitNo}). Custom values appear on reports and visit cards.
+          </p>
+        </div>
+
+        {/* Weather + mic */}
+        <div className="mb-5 animate-slide-up delay-50">
           <label className="text-[11px] font-semibold text-[var(--text2)] uppercase tracking-wider block mb-2">Weather</label>
           <div className="flex gap-2 items-center">
             <input
