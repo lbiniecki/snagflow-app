@@ -7,6 +7,38 @@ import VoxSiteLogo from "@/components/VoxSiteLogo";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
+/**
+ * Tiny footer component shown at the bottom of every login-screen state.
+ * Provides the EU/Stripe-required "by continuing you agree..." disclosure
+ * and discoverable links to the legal documents. Opens in a new tab so
+ * mid-signup users don't lose their inputs.
+ */
+function LegalLinks() {
+  return (
+    <p className="mt-6 text-[11px] leading-relaxed text-[var(--text3)]">
+      By continuing, you agree to our{" "}
+      <a
+        href="/terms"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="underline hover:text-[var(--text-primary)] transition-colors"
+      >
+        Terms
+      </a>{" "}
+      and{" "}
+      <a
+        href="/privacy"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="underline hover:text-[var(--text-primary)] transition-colors"
+      >
+        Privacy Policy
+      </a>
+      .
+    </p>
+  );
+}
+
 export default function LoginScreen() {
   const { setAuth, setScreen, showToast } = useStore();
   const [email, setEmail] = useState("");
@@ -321,6 +353,8 @@ export default function LoginScreen() {
           >
             Already have an account? Sign in instead
           </button>
+
+          <LegalLinks />
         </div>
       </div>
     );
@@ -372,6 +406,8 @@ export default function LoginScreen() {
           >
             Back to sign in
           </button>
+
+          <LegalLinks />
         </div>
       </div>
     );
@@ -433,6 +469,8 @@ export default function LoginScreen() {
           >
             Cancel
           </button>
+
+          <LegalLinks />
         </div>
       </div>
     );
@@ -524,6 +562,8 @@ export default function LoginScreen() {
         {error && (
           <p className="mt-4 text-sm text-critical animate-fade-in">{error}</p>
         )}
+
+        <LegalLinks />
       </div>
     </div>
   );

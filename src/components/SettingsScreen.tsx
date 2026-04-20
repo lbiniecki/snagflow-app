@@ -871,6 +871,38 @@ export default function SettingsScreen() {
             </section>
           </div>
         )}
+
+        {/* ── Legal links (always shown regardless of company state) ── */}
+        <section className="mt-8">
+          <h3 className="text-xs font-semibold text-[var(--text2)] uppercase tracking-wider mb-3">
+            Legal
+          </h3>
+          <div className="bg-[var(--bg2)] border border-[var(--border)] rounded-xl overflow-hidden">
+            <a
+              href="/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-between px-4 py-3 text-sm text-[var(--text-primary)] hover:bg-[var(--bg3)] transition-colors"
+            >
+              <span>Privacy Policy</span>
+              <span aria-hidden="true" className="text-[var(--text3)]">↗</span>
+            </a>
+            <div className="border-t border-[var(--border)]" />
+            <a
+              href="/terms"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-between px-4 py-3 text-sm text-[var(--text-primary)] hover:bg-[var(--bg3)] transition-colors"
+            >
+              <span>Terms of Service</span>
+              <span aria-hidden="true" className="text-[var(--text3)]">↗</span>
+            </a>
+          </div>
+          <p className="mt-3 text-[11px] leading-relaxed text-[var(--text3)]">
+            VoxSite is a product of Łukasz Biniecki Lbicon Projektowanie Konstrukcji,
+            ul. Unruga 65a, 30-394 Kraków, Poland. NIP&nbsp;7822124418 · EU&nbsp;VAT&nbsp;PL7822124418.
+          </p>
+        </section>
       </div>
 
       <BottomNav active="settings" />
