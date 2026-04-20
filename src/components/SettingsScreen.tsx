@@ -158,7 +158,10 @@ export default function SettingsScreen() {
     if (!company || !companyName.trim()) return;
     try {
       const updated = await companies.update({ name: companyName.trim() });
-      setCompany(updated);
+      // PATCH response doesn't include is_owner (it's a computed per-user
+      // flag, not a DB column). Merging the old value prevents the UI
+      // from treating the user as a non-owner and hiding owner-only panels.
+      setCompany({ ...updated, is_owner: company.is_owner });
       showToast("Company name updated");
     } catch (err: any) {
       showToast(err.message);
@@ -199,7 +202,10 @@ export default function SettingsScreen() {
         report_photos_per_page: photosPerPage,
         report_title_align: titleAlign,
       });
-      setCompany(updated);
+      // Preserve is_owner — PATCH response doesn't include it (computed
+      // per-user flag). Without this, the UI would hide the owner-only
+      // report-settings panel until the user navigates away and back.
+      setCompany({ ...updated, is_owner: company.is_owner });
       setReportSaved(true);
       showToast("Report settings saved");
       setTimeout(() => setReportSaved(false), 2000);
