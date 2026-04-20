@@ -76,6 +76,7 @@ export interface Company {
   report_include_rectification?: boolean;    // default false
   report_include_cover_page?: boolean;       // default true (Phase 2 will use)
   report_photos_per_page?: number;           // 1 | 2 | 4, default 2 (Phase 2 will use)
+  report_title_align?: "center" | "left";
   // ── Subscription status (payment failure handling) ───────────
   // subscription_status drives the past-due banner in Settings.
   // - 'active':   paying normally, no banner
