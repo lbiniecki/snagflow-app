@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useStore } from "@/lib/store";
 import { auth as authApi, setToken } from "@/lib/api";
-import { ClipboardCheck } from "lucide-react";
+import VoxSiteLogo from "@/components/VoxSiteLogo";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
@@ -277,7 +277,7 @@ export default function LoginScreen() {
         <div className="animate-slide-up text-center w-full max-w-xs">
           {/* Logo */}
           <div className="w-[72px] h-[72px] rounded-2xl bg-gradient-to-br from-brand to-orange-400 flex items-center justify-center mx-auto mb-5 shadow-lg shadow-brand/30">
-            <ClipboardCheck className="w-14 h-14 text-white" />
+            <VoxSiteLogo className="w-14 h-14 text-white" />
           </div>
           <h1 className="text-3xl font-bold mb-1">Welcome to VoxSite</h1>
           <p className="text-[var(--text3)] text-sm mb-2">You've been invited to join a team.</p>
@@ -332,7 +332,7 @@ export default function LoginScreen() {
       <div className="min-h-screen flex flex-col items-center justify-center px-8">
         <div className="animate-slide-up text-center w-full max-w-xs">
           <div className="w-[72px] h-[72px] rounded-2xl bg-gradient-to-br from-brand to-orange-400 flex items-center justify-center mx-auto mb-5 shadow-lg shadow-brand/30">
-            <ClipboardCheck className="w-14 h-14 text-white" />
+            <VoxSiteLogo className="w-14 h-14 text-white" />
           </div>
           <h1 className="text-3xl font-bold mb-1">Reset password</h1>
           <p className="text-[var(--text3)] text-sm mb-6">
@@ -383,7 +383,7 @@ export default function LoginScreen() {
       <div className="min-h-screen flex flex-col items-center justify-center px-8">
         <div className="animate-slide-up text-center w-full max-w-xs">
           <div className="w-[72px] h-[72px] rounded-2xl bg-gradient-to-br from-brand to-orange-400 flex items-center justify-center mx-auto mb-5 shadow-lg shadow-brand/30">
-            <ClipboardCheck className="w-14 h-14 text-white" />
+            <VoxSiteLogo className="w-14 h-14 text-white" />
           </div>
           <h1 className="text-3xl font-bold mb-1">Set new password</h1>
           <p className="text-[var(--text3)] text-sm mb-6">
@@ -444,7 +444,7 @@ export default function LoginScreen() {
       <div className="animate-slide-up text-center w-full max-w-xs">
         {/* Logo */}
         <div className="w-[72px] h-[72px] rounded-2xl bg-gradient-to-br from-brand to-orange-400 flex items-center justify-center mx-auto mb-5 shadow-lg shadow-brand/30">
-          <ClipboardCheck className="w-14 h-14 text-white" />
+          <VoxSiteLogo className="w-14 h-14 text-white" />
         </div>
         <h1 className="text-3xl font-bold mb-1">VoxSite</h1>
         <p className="text-[var(--text3)] text-sm mb-8">Site inspections, simplified.</p>
