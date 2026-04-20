@@ -572,13 +572,14 @@ export const companies = {
     });
   },
 
-  update(data: {
+update(data: {
     name?: string;
     report_brand_colour?: string;
     report_footer_text?: string | null;
     report_include_rectification?: boolean;
     report_include_cover_page?: boolean;
     report_photos_per_page?: number;
+    report_title_align?: "center" | "left";
   }) {
     return apiFetch<Company>("/companies/me", {
       method: "PATCH",
