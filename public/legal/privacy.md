@@ -290,3 +290,4 @@ We respond to all privacy requests within 30 days as required by GDPR.
 *This Privacy Policy is governed by Polish law and the EU General Data Protection Regulation.*
 
 *© 2026 Łukasz Biniecki Lbicon Projektowanie Konstrukcji · VoxSite is a trade name of the above.*
+
