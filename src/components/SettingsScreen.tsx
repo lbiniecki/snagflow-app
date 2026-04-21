@@ -53,7 +53,7 @@ export default function SettingsScreen() {
   const [footerText, setFooterText] = useState("");
   const [includeRectification, setIncludeRectification] = useState(false);
   const [photosPerPage, setPhotosPerPage] = useState<1 | 2 | 4>(2);
-  const [titleAlign, setTitleAlign] = useState<"center" | "left">("center");
+  const [titleAlign, setTitleAlign] = useState<"center" | "left" | "right">("center");
   const [savingReport, setSavingReport] = useState(false);
   const [reportSaved, setReportSaved] = useState(false);
 
@@ -94,7 +94,7 @@ export default function SettingsScreen() {
           setPhotosPerPage(pp === 1 || pp === 4 ? pp : 2);
           // Seed title alignment — defensively fall back to center
           const ta = (c.report_title_align || "").toString();
-          setTitleAlign(ta === "left" ? "left" : "center");
+          setTitleAlign(ta === "left" || ta === "right" ? ta : "center");
 
           // Fetch members (now returns email + full_name from profiles join)
           try {
@@ -222,7 +222,11 @@ export default function SettingsScreen() {
     footerText !== (company.report_footer_text || "") ||
     includeRectification !== !!company.report_include_rectification ||
     photosPerPage !== (company.report_photos_per_page === 1 || company.report_photos_per_page === 4 ? company.report_photos_per_page : 2) ||
-    titleAlign !== (company.report_title_align === "left" ? "left" : "center")
+    titleAlign !== (
+      company.report_title_align === "left" || company.report_title_align === "right"
+        ? company.report_title_align
+        : "center"
+    )
   );
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -785,13 +789,16 @@ export default function SettingsScreen() {
                     </p>
                   </div>
 
-                  {/* Cover title alignment */}
+                  {/* Cover alignment — drives BOTH logo position and
+                      title text. Kept as a single control because having
+                      the logo left-aligned while the title is centered
+                      (or vice versa) looks amateurish. */}
                   <div>
                     <label className="text-xs font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">
-                      Cover title alignment
+                      Cover alignment
                     </label>
                     <div className="flex gap-2">
-                      {(["center", "left"] as const).map((a) => (
+                      {(["left", "center", "right"] as const).map((a) => (
                         <button
                           key={a}
                           type="button"
@@ -807,7 +814,7 @@ export default function SettingsScreen() {
                       ))}
                     </div>
                     <p className="text-xs text-[var(--text3)] mt-1">
-                      Applies to the cover page: company name, project name, report title, visit/issue number, and document reference.
+                      Positions both the company logo and the cover text (company name, project name, report title, visit/issue number, document reference).
                     </p>
                   </div>
 
