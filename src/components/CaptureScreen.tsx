@@ -138,28 +138,79 @@ export default function CaptureScreen() {
   // that attribute is often ignored, so we open the blob in a new tab
   // and the user saves via the browser's share sheet. Matches the
   // pattern used in reports.downloadPdf.
+  // Build the canonical download filename per spec:
+  //   {ProjectCode}_{YYYY_MM_DD}_{ItemNo}_{PhotoSlot}.jpg
+  // where:
+  //   ProjectCode = first 3 letters of the project name, uppercase
+  //                 (matches the PDF document-ref convention)
+  //   YYYY_MM_DD  = the snag's created_at date; falls back to today
+  //                 when the snag hasn't been saved yet (new-item flow)
+  //   ItemNo      = the snag's snag_no, zero-padded to 2 digits; 'NEW'
+  //                 when editing a brand-new snag with no number yet
+  //   PhotoSlot   = 1..4, zero-padded to 2 digits. For existing photos
+  //                 this is the actual DB slot (so the filename matches
+  //                 the PDF caption exactly). For newly-picked photos
+  //                 that haven't been uploaded yet, it's the visible
+  //                 position in the grid (also matches where they'll
+  //                 land in the PDF on next save).
+  const buildPhotoFilename = (p: PhotoSlot, index: number): string => {
+    const rawName = currentProject?.name || "PROJECT";
+    // Normalize Unicode diacritics before stripping non-alphanumerics.
+    // Without NFKD, "Łódź" loses the accented chars entirely and drops
+    // back to "Project" → "PRO" — not what the user named their project.
+    // With NFKD, "ódź" decomposes to "odz" and survives. Ł is a special
+    // case (it has no decomposition) so we map it explicitly.
+    const projectCode = rawName
+      .normalize("NFKD")
+      .replace(/[\u0141]/g, "L")  // Ł → L
+      .replace(/[\u0142]/g, "l")  // ł → l
+      .replace(/[\u0300-\u036f]/g, "")  // strip combining diacritics
+      .replace(/[^a-zA-Z0-9]/g, "")
+      .slice(0, 3)
+      .toUpperCase() || "PRJ";
+
+    const isoDate = editingSnag?.created_at || new Date().toISOString();
+    // ISO is "YYYY-MM-DDTHH:mm:ss..." — swap dashes for underscores on
+    // the date portion and drop the time to match the spec format.
+    const datePart = isoDate.slice(0, 10).replace(/-/g, "_");
+
+    const itemNo = editingSnag?.snag_no
+      ? String(editingSnag.snag_no).padStart(2, "0")
+      : "NEW";
+
+    const slotNo = p.kind === "existing"
+      ? String(p.slot).padStart(2, "0")
+      : String(index + 1).padStart(2, "0");
+
+    return `${projectCode}_${datePart}_${itemNo}_${slotNo}.jpg`;
+  };
+
   const downloadPhoto = async (p: PhotoSlot, index: number) => {
     try {
       let blob: Blob;
-      let filename: string;
 
       if (p.kind === "existing") {
         const res = await fetch(p.url);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         blob = await res.blob();
-        // Supabase paths look like "<snag_id>/photo-<uuid>.jpg". Grab
-        // the tail as a sensible filename; fall back to a generic name.
-        const tail = p.url.split("?")[0].split("/").pop() || "";
-        filename = tail && tail.includes(".") ? tail : `photo-${index + 1}.jpg`;
       } else {
         blob = p.file;
-        filename = p.file.name || `photo-${index + 1}.jpg`;
       }
 
+      const filename = buildPhotoFilename(p, index);
       const blobUrl = URL.createObjectURL(blob);
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
       if (isMobile) {
+        // On mobile the <a download> attribute is often ignored, so the
+        // filename we set wouldn't apply anyway. Open in a new tab and
+        // let the user save via the share sheet. The share sheet uses
+        // the filename from the Content-Disposition header or falls
+        // back to the URL's last path segment — neither of which we
+        // control with a blob URL. This is an iOS/Android platform
+        // limitation, not something we can work around in a web app
+        // without the Web Share API (which would need user opt-in per
+        // share and is out of scope for this iteration).
         const win = window.open(blobUrl, "_blank");
         if (!win) {
           // Popup blocked — fallback to navigating the current tab so
