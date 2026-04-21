@@ -7,7 +7,7 @@ import { useAudioRecorder } from "@/lib/useAudioRecorder";
 import { useOnlineStatus } from "@/lib/useOnlineStatus";
 import { compressImage } from "@/lib/compressImage";
 import { savePendingSnag, type PendingSnag } from "@/lib/offlineStore";
-import { ChevronLeft, Camera, Mic, X, WifiOff, Image as ImageIcon } from "lucide-react";
+import { ChevronLeft, Camera, Mic, X, WifiOff, Image as ImageIcon, Download } from "lucide-react";
 import clsx from "clsx";
 
 const PRIORITY_STYLES = {
@@ -125,6 +125,61 @@ export default function CaptureScreen() {
     // server-side delete is queued until save, so the user can still
     // back out via the discard dialog.
     setPhotos((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // Save a photo to the user's device. Two cases:
+  //   - "existing" photos have a signed Supabase Storage URL. Fetch as
+  //     blob (signed URLs don't play nicely with <a download> on mobile
+  //     because they're cross-origin) and save via blob URL.
+  //   - "new" photos are local File objects — we already have a blob
+  //     preview URL, and we know the File's name.
+  //
+  // On desktop we use the classic <a download> click pattern. On mobile
+  // that attribute is often ignored, so we open the blob in a new tab
+  // and the user saves via the browser's share sheet. Matches the
+  // pattern used in reports.downloadPdf.
+  const downloadPhoto = async (p: PhotoSlot, index: number) => {
+    try {
+      let blob: Blob;
+      let filename: string;
+
+      if (p.kind === "existing") {
+        const res = await fetch(p.url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        blob = await res.blob();
+        // Supabase paths look like "<snag_id>/photo-<uuid>.jpg". Grab
+        // the tail as a sensible filename; fall back to a generic name.
+        const tail = p.url.split("?")[0].split("/").pop() || "";
+        filename = tail && tail.includes(".") ? tail : `photo-${index + 1}.jpg`;
+      } else {
+        blob = p.file;
+        filename = p.file.name || `photo-${index + 1}.jpg`;
+      }
+
+      const blobUrl = URL.createObjectURL(blob);
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+      if (isMobile) {
+        const win = window.open(blobUrl, "_blank");
+        if (!win) {
+          // Popup blocked — fallback to navigating the current tab so
+          // the user still gets the photo rather than a silent failure.
+          window.location.href = blobUrl;
+        }
+      } else {
+        const a = document.createElement("a");
+        a.href = blobUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }
+
+      // Release after a comfortable window — mobile uses the URL async.
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+    } catch (err: any) {
+      showToast(`Could not download photo: ${err.message || err}`);
+    }
   };
 
   const handleMic = async (
@@ -364,13 +419,25 @@ export default function CaptureScreen() {
                   alt={`Photo ${i + 1}`}
                   className="w-full h-full object-cover"
                 />
-                <button
-                  onClick={() => removePhoto(i)}
-                  className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-black/60 text-white flex items-center justify-center"
-                  aria-label={`Remove photo ${i + 1}`}
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
+                {/* Action buttons, stacked top-right. Download first, then remove. */}
+                <div className="absolute top-1.5 right-1.5 flex gap-1.5">
+                  <button
+                    onClick={() => downloadPhoto(p, i)}
+                    className="w-7 h-7 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/75 transition-colors"
+                    aria-label={`Download photo ${i + 1}`}
+                    type="button"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => removePhoto(i)}
+                    className="w-7 h-7 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/75 transition-colors"
+                    aria-label={`Remove photo ${i + 1}`}
+                    type="button"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
                 <span className="absolute bottom-1.5 left-1.5 text-xs font-bold text-white bg-black/50 px-1.5 py-0.5 rounded">
                   {i + 1}
                 </span>

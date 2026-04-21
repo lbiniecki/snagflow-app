@@ -310,9 +310,9 @@ export default function SettingsScreen() {
   const handleRemoveMember = async (m: CompanyMember) => {
     const name = getMemberDisplay(m);
     const ok = await confirm({
-      title: "Remove team member?",
-      message: `${name} will lose access to this company's projects immediately. They'll keep their own account and can be re-invited later if needed.`,
-      confirmLabel: "Remove",
+      title: "Remove and delete this team member?",
+      message: `This will permanently delete ${name}'s account — including their login, profile, and any data tied to it. This cannot be undone. If you just want to stop them accessing this team, consider that this action also removes their entire account from VoxSite.`,
+      confirmLabel: "Delete account",
       tone: "destructive",
     });
     if (!ok) return;
@@ -321,7 +321,7 @@ export default function SettingsScreen() {
       setMembers(members.filter((x) => x.id !== m.id));
       const c = await companies.getMyCompany();
       setCompany(c);
-      showToast("Member removed");
+      showToast("Member removed and account deleted");
     } catch (err: any) {
       showToast(err.message);
     }
@@ -727,7 +727,7 @@ export default function SettingsScreen() {
                     >
                       <span
                         className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
-                          includeRectification ? "translate-x-5" : "translate-x-0.5"
+                          includeRectification ? "translate-x-[22px]" : "translate-x-0.5"
                         }`}
                       />
                     </button>
