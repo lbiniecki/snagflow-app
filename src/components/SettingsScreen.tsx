@@ -668,8 +668,16 @@ export default function SettingsScreen() {
               </section>
             )}
 
-            {/* Report Settings (Phase 1) — admin-only */}
-            {company.is_owner && (
+            {/* Report Settings — visible to all members. Brand Colour is
+                owner-only (read-only for members). Save button is also
+                owner-only — the backend PATCH endpoint 403s non-owners,
+                so showing a Save button that can't actually save would be
+                confusing. Non-owners see a read-only view of the current
+                settings. */}
+            {(() => {
+              const canEditBrand = !!company.is_owner;
+              const canSave = !!company.is_owner;
+              return (
               <section>
                 <h3 className="text-xs font-semibold text-[var(--text2)] uppercase tracking-wider mb-3 flex items-center gap-2">
                   <FileText className="w-4 h-4" /> Report Settings
@@ -677,9 +685,17 @@ export default function SettingsScreen() {
                 <div className="bg-[var(--bg2)] border border-[var(--border)] rounded-xl p-4 space-y-4">
                   <p className="text-xs text-[var(--text3)] leading-relaxed">
                     These settings apply to every PDF report your team generates.
+                    {!canSave && (
+                      <>
+                        {" "}
+                        <span className="text-[var(--text-primary)] font-medium">
+                          Only the company owner can change these.
+                        </span>
+                      </>
+                    )}
                   </p>
 
-                  {/* Brand colour */}
+                  {/* Brand colour — owner-only for editing */}
                   <div>
                     <label className="text-xs font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">
                       Brand Colour
@@ -689,7 +705,8 @@ export default function SettingsScreen() {
                         type="color"
                         value={/^#[0-9A-Fa-f]{6}$/.test(brandColour) ? brandColour : "#F97316"}
                         onChange={(e) => setBrandColour(e.target.value.toUpperCase())}
-                        className="w-14 h-10 rounded-lg border border-[var(--border)] bg-[var(--bg)] cursor-pointer"
+                        disabled={!canEditBrand}
+                        className="w-14 h-10 rounded-lg border border-[var(--border)] bg-[var(--bg)] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                         aria-label="Brand colour picker"
                       />
                       <input
@@ -698,7 +715,8 @@ export default function SettingsScreen() {
                         onChange={(e) => setBrandColour(e.target.value)}
                         placeholder="#F97316"
                         maxLength={7}
-                        className="flex-1 px-3 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors font-mono"
+                        readOnly={!canEditBrand}
+                        className="flex-1 px-3 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors font-mono read-only:opacity-60 read-only:cursor-not-allowed"
                       />
                     </div>
                     <p className="text-xs text-[var(--text3)] mt-1">
@@ -725,9 +743,16 @@ export default function SettingsScreen() {
                       aria-label="Toggle rectification sign-off"
                       aria-pressed={includeRectification}
                     >
+                      {/* Pill is absolutely-positioned using left/right rather
+                          than translate-x. Transform-based offsets were
+                          rendering asymmetrically (pushed too far right when
+                          ON), possibly due to Tailwind arbitrary-value JIT
+                          quirks. Track is 44px, pill is 20px, so left-0.5
+                          and right-0.5 (2px each) give symmetric padding in
+                          both states. */}
                       <span
-                        className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
-                          includeRectification ? "translate-x-[22px]" : "translate-x-0.5"
+                        className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all ${
+                          includeRectification ? "right-0.5" : "left-0.5"
                         }`}
                       />
                     </button>
@@ -804,19 +829,24 @@ export default function SettingsScreen() {
                     </p>
                   </div>
 
-                  {/* Save */}
-                  <button
-                    onClick={handleSaveReportSettings}
-                    disabled={!reportDirty || savingReport}
-                    className="w-full py-2.5 bg-brand hover:bg-brand-light text-white text-sm font-semibold rounded-lg transition-all disabled:opacity-40"
-                  >
-                    {savingReport ? "Saving…" : reportSaved ? "Saved!" : "Save report settings"}
-                  </button>
+                  {/* Save — owner only */}
+                  {canSave && (
+                    <button
+                      onClick={handleSaveReportSettings}
+                      disabled={!reportDirty || savingReport}
+                      className="w-full py-2.5 bg-brand hover:bg-brand-light text-white text-sm font-semibold rounded-lg transition-all disabled:opacity-40"
+                    >
+                      {savingReport ? "Saving…" : reportSaved ? "Saved!" : "Save report settings"}
+                    </button>
+                  )}
                 </div>
               </section>
-            )}
+              );
+            })()}
 
-            {/* Team Members */}
+            {/* Team Members — owner only. Non-owners don't need to see
+                who else is on the team from the Settings screen. */}
+            {company.is_owner && (
             <section>
               <h3 className="text-xs font-semibold text-[var(--text2)] uppercase tracking-wider mb-3 flex items-center gap-2">
                 <Users className="w-4 h-4" /> Team Members ({totalSeats}/{maxUsersDisplay})
@@ -908,6 +938,7 @@ export default function SettingsScreen() {
                 )}
               </div>
             </section>
+            )}
           </div>
         )}
 
