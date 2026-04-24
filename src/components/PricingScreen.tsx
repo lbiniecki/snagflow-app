@@ -29,7 +29,7 @@ const PLANS = [
     name: "Solo",
     monthlyPrice: 12,
     annualPrice: 120,
-    priceIdMonthly: "price_1TNyLGIzCuyhGXgYJyUyNFoq",
+    priceIdMonthly: "price_1TPm8TIzCuyhGXgYlsF96cZJ",
     priceIdAnnual: "price_1TNyPrIzCuyhGXgYvxlOVm8F",
   },
   {
