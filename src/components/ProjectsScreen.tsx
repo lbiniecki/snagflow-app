@@ -3,9 +3,13 @@
 import { useState, useEffect } from "react";
 import { useStore } from "@/lib/store";
 import { projects as projectsApi, companies as companiesApi } from "@/lib/api";
-import { LogOut, Plus, X, Sparkles, Trash2 } from "lucide-react";
+import { LogOut, Plus, X, Sparkles, Trash2, Pencil } from "lucide-react";
 import BottomNav from "./BottomNav";
 import { useConfirm } from "./ConfirmDialog";
+
+// Type for the project shape used here. Reused for the editing-target state
+// — null when no edit is in progress, the project object when editing.
+type Project = ReturnType<typeof useStore.getState>["projects"][0];
 
 export default function ProjectsScreen() {
   const {
@@ -14,13 +18,22 @@ export default function ProjectsScreen() {
     isCompanyOwner, setIsCompanyOwner,
   } = useStore();
 
+  // Modal state.
+  // - showModal: visibility of the New/Edit Project modal
+  // - editingProject: when null → modal is in CREATE mode; when set →
+  //   modal is in EDIT mode and form is pre-filled with this project's
+  //   values. We share one modal between create and edit because the
+  //   form fields are identical (name/client/address) — only the title
+  //   and submit handler differ.
   const [showModal, setShowModal] = useState(false);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [name, setName] = useState("");
   const [client, setClient] = useState("");
   const [address, setAddress] = useState("");
+  const [saving, setSaving] = useState(false);
   const confirm = useConfirm();
 
-  const deleteProject = async (p: typeof projects[0]) => {
+  const deleteProject = async (p: Project) => {
     const ok = await confirm({
       title: "Delete this project?",
       message: `"${p.name}" and all its site visits, items, and photos will be permanently removed. This can't be undone.`,
@@ -35,6 +48,33 @@ export default function ProjectsScreen() {
     } catch (err: any) {
       showToast(err.message || "Failed to delete project");
     }
+  };
+
+  // Open the modal in CREATE mode — empty form, no editing target.
+  const openCreate = () => {
+    setEditingProject(null);
+    setName("");
+    setClient("");
+    setAddress("");
+    setShowModal(true);
+  };
+
+  // Open the modal in EDIT mode — pre-fill from the project being edited.
+  // Stop propagation so the card's openProject click handler doesn't fire.
+  const openEdit = (e: React.MouseEvent, p: Project) => {
+    e.stopPropagation();
+    setEditingProject(p);
+    setName(p.name);
+    setClient(p.client || "");
+    setAddress(p.address || "");
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    // Keep the form values around briefly so the closing animation doesn't
+    // jank as fields blank out. They get reset cleanly when the modal is
+    // next opened (openCreate / openEdit).
   };
 
   // Fetch projects on mount
@@ -73,27 +113,64 @@ export default function ProjectsScreen() {
     })();
   }, [isCompanyOwner, setIsCompanyOwner]);
 
-  const handleCreate = async () => {
-    if (!name.trim()) return;
+  // Submit handler — branches on whether we're editing or creating.
+  // Both paths share input validation (non-empty name) and toast feedback.
+  const handleSubmit = async () => {
+    const trimmedName = name.trim();
+    if (!trimmedName) return;
+    setSaving(true);
     try {
-      const created = await projectsApi.create({ name, client, address });
-      setProjects([created, ...projects]);
+      if (editingProject) {
+        // EDIT path — PATCH the project, replace it in the list in-place
+        // so the user's scroll position and visual order are preserved.
+        const updated = await projectsApi.update(editingProject.id, {
+          name: trimmedName,
+          client: client.trim() || undefined,
+          address: address.trim() || undefined,
+        });
+        setProjects(
+          projects.map((p) =>
+            p.id === editingProject.id
+              // Preserve snag_count from the existing list — the PATCH
+              // response always returns 0 (the backend doesn't recompute
+              // it on update). Using the response's count would visually
+              // wipe the snag badge until the next list refresh.
+              ? { ...updated, snag_count: p.snag_count }
+              : p
+          )
+        );
+        showToast("Project updated");
+      } else {
+        // CREATE path — original behaviour, prepend new project.
+        const created = await projectsApi.create({
+          name: trimmedName,
+          client: client.trim() || undefined,
+          address: address.trim() || undefined,
+        });
+        setProjects([created, ...projects]);
+        showToast("Project created");
+      }
       setShowModal(false);
-      setName("");
-      setClient("");
-      setAddress("");
-      showToast("Project created");
     } catch (err: any) {
-      showToast(err.message);
+      // Common case: 404 if the project was deleted on another device
+      // between when this list was loaded and when the edit was submitted.
+      // The toast surfaces the backend's error message.
+      showToast(err.message || "Failed to save project");
+    } finally {
+      setSaving(false);
     }
   };
 
-  const openProject = (p: typeof projects[0]) => {
+  const openProject = (p: Project) => {
     setCurrentProject(p);
     setScreen("visits");
   };
 
   const totalOpen = projects.reduce((sum, p) => sum + (p.snag_count || 0), 0);
+
+  // Modal title and submit-button label adapt based on mode.
+  const modalTitle = editingProject ? "Edit Project" : "New Project";
+  const submitLabel = editingProject ? "Save changes" : "Create Project";
 
   return (
     <div>
@@ -164,10 +241,22 @@ export default function ProjectsScreen() {
                       {p.snag_count} items
                     </span>
                   )}
+                  {/* Edit pencil — calls openEdit which stops propagation,
+                      so the card's openProject doesn't fire. Same visual
+                      weight pattern as the existing trash button. */}
+                  <button
+                    onClick={(e) => openEdit(e, p)}
+                    className="p-1.5 rounded-lg bg-[var(--text3)]/10 text-[var(--text2)] hover:bg-[var(--text3)]/20 transition-colors"
+                    title="Edit project"
+                    aria-label="Edit project"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); deleteProject(p); }}
                     className="p-1.5 rounded-lg bg-critical/10 text-critical hover:bg-critical/20 transition-colors"
                     title="Delete project"
+                    aria-label="Delete project"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -183,17 +272,21 @@ export default function ProjectsScreen() {
 
       {/* FAB */}
       <button
-        onClick={() => setShowModal(true)}
+        onClick={openCreate}
         className="fixed bottom-24 right-[max(20px,calc((100%-480px)/2+20px))] w-14 h-14 rounded-full bg-brand text-white flex items-center justify-center shadow-[var(--fab-shadow)] hover:scale-110 active:scale-95 transition-transform z-40"
+        aria-label="Create project"
       >
         <Plus className="w-6 h-6" />
       </button>
 
-      {/* Create modal */}
+      {/* Create / Edit modal — single component, shared between modes.
+          Title and submit handler adapt based on whether editingProject
+          is set. Form fields are identical because the create and update
+          payloads accept the same shape. */}
       {showModal && (
         <div
           className="fixed inset-0 bg-black/70 z-50 animate-fade-in overflow-y-auto"
-          onClick={() => setShowModal(false)}
+          onClick={closeModal}
           style={{ height: "100dvh" }}
         >
           <div className="min-h-full flex items-start justify-center pt-[12vh] pb-8 px-4">
@@ -202,8 +295,8 @@ export default function ProjectsScreen() {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex justify-between items-center mb-5">
-                <h3 className="text-lg font-bold text-[var(--text-primary)]">New Project</h3>
-                <button onClick={() => setShowModal(false)} className="text-[var(--text3)]"><X className="w-5 h-5" /></button>
+                <h3 className="text-lg font-bold text-[var(--text-primary)]">{modalTitle}</h3>
+                <button onClick={closeModal} className="text-[var(--text3)]" aria-label="Close"><X className="w-5 h-5" /></button>
               </div>
 
               <div className="space-y-3 mb-5">
@@ -239,10 +332,10 @@ export default function ProjectsScreen() {
                 </div>
               </div>
 
-              <button onClick={handleCreate} disabled={!name.trim()}
+              <button onClick={handleSubmit} disabled={!name.trim() || saving}
                 className="w-full h-12 bg-brand hover:bg-brand-light text-white font-semibold rounded-lg transition-all disabled:opacity-50"
               >
-                Create Project
+                {saving ? "Saving…" : submitLabel}
               </button>
             </div>
           </div>
