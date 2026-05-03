@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getToken } from "@/lib/api";
+import { getToken, isReturningUser, setReturningUser } from "@/lib/api";
 
 import LandingNav from "@/components/landing/LandingNav";
 import Hero from "@/components/landing/Hero";
@@ -16,23 +16,40 @@ import LandingFooter from "@/components/landing/LandingFooter";
 
 export default function LandingPage() {
   const router = useRouter();
-  // Guard against a flash of marketing content for already-logged-in users.
-  // We start as "checking" so the page renders nothing until we know the
-  // auth state. If a token exists, we redirect to /app immediately. If not,
-  // we render the landing page.
+  // Guard against a flash of marketing content for returning users.
+  // We start as "checking" so the page renders nothing until we know what
+  // to do with this visitor. The check is synchronous (just localStorage
+  // reads), so this resolves on the first effect tick.
   //
-  // Note: we deliberately do NOT verify the token with the backend here.
-  // A stale token gets handled inside /app/page.tsx (which clears it and
-  // bounces back to /). Doing the network call twice would slow the
-  // first paint of an authenticated user's session for no benefit.
+  // Three branches:
+  // 1. Token in localStorage → user is logged in (or has stale session).
+  //    Redirect to /app, which validates the token and either continues
+  //    or bounces back to /. Either way, never shows marketing.
+  // 2. No token but returning-user flag set → user has signed in here
+  //    before, sometime on this device. Skip marketing, take them to
+  //    the login form directly.
+  // 3. No token and no flag → genuinely new visitor. Show marketing.
   const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
     const token = getToken();
+
     if (token) {
+      // Backfill: anyone with a token has logged in successfully at
+      // some point. Mark them as returning so future logouts→visits
+      // skip marketing too.
+      setReturningUser();
       router.replace("/app");
       return;
     }
+
+    if (isReturningUser()) {
+      // Known returning user without an active session — straight to login.
+      router.replace("/app?mode=login");
+      return;
+    }
+
+    // True first-time visitor — show the marketing page.
     setAuthChecked(true);
   }, [router]);
 

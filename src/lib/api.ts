@@ -161,14 +161,54 @@ export const UNLIMITED = 999_999;
 export const isUnlimited = (n: number) => n >= UNLIMITED;
 
 // ─── Token Management ─────────────────────────────────────────
+// ─── Token Management ─────────────────────────────────────────
+
+// "Returning user" flag — used by the marketing landing page to skip
+// straight to the login screen for anyone who has previously signed in
+// on this device. The flag lives in localStorage alongside the token.
+//
+// Lifecycle:
+// - Set on every successful login (setToken called with a non-null token).
+// - Cleared on explicit logout (setToken called with null).
+// - Backfilled on first landing-page visit after deploy: if a token
+//   exists in localStorage, the flag is set retroactively.
+//
+// Effect: returning users see the login form, not the marketing page.
+// True first-time visitors see the marketing page. Users who explicitly
+// logged out see the marketing page (they opted out).
+const RETURNING_USER_KEY = "voxsite_returning_user";
+
+export function setReturningUser() {
+  if (typeof window !== "undefined") {
+    localStorage.setItem(RETURNING_USER_KEY, "1");
+  }
+}
+
+export function clearReturningUser() {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem(RETURNING_USER_KEY);
+  }
+}
+
+export function isReturningUser(): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem(RETURNING_USER_KEY) === "1";
+}
+
 let accessToken: string | null = null;
 
 export function setToken(token: string | null) {
   accessToken = token;
   if (token) {
     localStorage.setItem("voxsite_token", token);
+    // Mark this device as having a returning user. Persists across logout
+    // only if the user logs out via setToken(null) — see else branch.
+    setReturningUser();
   } else {
     localStorage.removeItem("voxsite_token");
+    // Explicit logout clears the flag, so the user sees the marketing
+    // page next time they visit voxsite.app — they opted out.
+    clearReturningUser();
   }
 }
 
@@ -179,7 +219,6 @@ export function getToken(): string | null {
   }
   return accessToken;
 }
-
 // ─── Fetch Helper ─────────────────────────────────────────────
 async function apiFetch<T>(
   path: string,
