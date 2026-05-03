@@ -1,22 +1,22 @@
-// Problem section.
+// Problem section — tightened in Session B v4.
 //
-// Pure prose, no images, lots of whitespace. Copy locked in architecture v1.4.
-// Tone: observational, not pain-pitching. The subtle word "often" is load-bearing
-// (it's an observation, not a universal claim). Don't remove it.
+// Single-line copy mirroring the headline rhythm. Each clause is one
+// step in the workflow; final clause echoes the headline's promise.
+//
+// Original was two prose paragraphs explaining the workflow at length —
+// fine for a longform article, too heavy for a landing page where the
+// hero already showed the same workflow visually.
+//
+// If we ever feel this section is redundant alongside the hero (it
+// arguably is — same content, different format), removing it is a
+// one-import change in src/app/(landing)/page.tsx.
 export default function ProblemSection() {
   return (
-    <section className="px-6 lg:px-8 py-20 lg:py-28 border-t border-[var(--border)]">
+    <section className="px-6 lg:px-8 py-16 lg:py-20 border-t border-[var(--border)]">
       <div className="max-w-3xl mx-auto">
-        <p className="text-lg lg:text-xl text-[var(--text-primary)] leading-relaxed">
-          Site visits have a real workflow. You walk the building. You note
-          defects. You take photos. Then back at the desk, you turn that into
-          a report — often taking as long as the visit itself.
-        </p>
-        <p className="mt-6 text-lg lg:text-xl text-[var(--text-primary)] leading-relaxed">
-          VoxSite collapses the second part into the first. You speak your
-          snags as you walk; the transcription, the photos, and the report
-          come together in real time. By the time you close the boot of your
-          car, the report is ready.
+        <p className="text-xl lg:text-2xl text-[var(--text-primary)] leading-relaxed">
+          Walk the site. Note defects. Take photos. Speak your snags as you
+          go. Back at the desk, the report writes itself.
         </p>
       </div>
     </section>

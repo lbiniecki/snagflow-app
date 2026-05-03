@@ -6,13 +6,22 @@ import { getToken, isReturningUser, setReturningUser } from "@/lib/api";
 import LandingNav from "@/components/landing/LandingNav";
 import Hero from "@/components/landing/Hero";
 import ProblemSection from "@/components/landing/ProblemSection";
-import HowItWorksSection from "@/components/landing/HowItWorksSection";
 import FeaturesSection from "@/components/landing/FeaturesSection";
 import PricingSection from "@/components/landing/PricingSection";
 import PilotQuoteSection from "@/components/landing/PilotQuoteSection";
 import FAQSection from "@/components/landing/FAQSection";
 import FinalCTA from "@/components/landing/FinalCTA";
 import LandingFooter from "@/components/landing/LandingFooter";
+
+// Note: HowItWorksSection was removed in Session B v2.
+// The hero now contains an interactive 5-screen tap-through that walks
+// users through the entire workflow (Projects → Visits → Snags →
+// Edit → Report). The 3-step "Speak / Snap / Send" section became
+// redundant — same screens, same story, less impact.
+//
+// The component file (HowItWorksSection.tsx) is left in place but
+// orphaned. Safe to delete in a future cleanup; kept for now so the
+// removal can be reviewed via git history without broken imports.
 
 export default function LandingPage() {
   const router = useRouter();
@@ -64,7 +73,6 @@ export default function LandingPage() {
       <LandingNav />
       <Hero />
       <ProblemSection />
-      <HowItWorksSection />
       <FeaturesSection />
       <PricingSection />
       <PilotQuoteSection />

@@ -1,67 +1,86 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import Image from "next/image";
+import { useState } from "react";
 
-// Hero section — Session B: with cycling animation.
+// Hero — Session B v4.
 //
-// The hero visual cycles between two phone-frame mockups:
-//   1. Snag list mid-visit (the work happening)
-//   2. Inspection report PDF (the result)
+// Interactive single-phone showcase. The user taps the phone to advance
+// through the 5 workflow screens. Each tap cross-fades to the next.
 //
-// This visually demonstrates the headline: "Walk the site. Your report
-// writes itself." The reader sees the transformation without reading.
+// Sequence (matches the natural use flow):
+//   0. Projects        — "what I'm working on"
+//   1. Site visits     — "the visits in this project"
+//   2. Snag list       — "what I captured this visit"
+//   3. Edit item       — "the detail of one snag"
+//   4. Report          — "the finished output"
 //
-// Animation timing:
-//   0.0–2.5s:  snag list visible
-//   2.5–3.0s:  cross-fade transition (0.5s)
-//   3.0–5.5s:  report visible
-//   5.5–6.0s:  cross-fade back
-//   ↻ repeats
+// v4 sizing strategy:
+//   - All 5 mockups use object-contain (no cropping)
+//   - Phone frame uses aspect-[9/19] — slightly taller than the mockups
+//   - Frame background is hardcoded to #F5F0E8 (the cream tone used in
+//     the mockup images themselves), so the letterboxing top/bottom of
+//     each image blends invisibly into the frame
 //
-// Pauses on hover so visitors can study a specific frame.
-//
-// Implementation note: we use plain CSS opacity transitions rather than
-// Framer Motion for the hero. Reasons:
-//   - Smaller bundle (no extra dependency just for a 2-frame crossfade)
-//   - GPU-accelerated by default
-//   - Works without "use client" overhead from motion components
-// Framer Motion is reserved for the more complex scroll-triggered
-// animations elsewhere on the page.
-//
-// Accessibility:
-//   - prefers-reduced-motion: animation pauses, shows just the snag list.
-//   - aria-hidden on the secondary frame since it's decorative for the
-//     primary message; both are described by the page heading.
+// Light/dark mode caveat:
+//   Mockups were captured against a cream background, so we hardcode
+//   that color on the frame. This means in DARK MODE the phone frame
+//   appears as a cream rectangle on a dark page — visible but not ugly.
+//   Re-export with transparent backgrounds in a future session would
+//   solve this; for now, light mode looks great and dark mode is OK.
+const FRAME_BG = "#F5F0E8";
 
-const CYCLE_MS = 6000;
-const HOLD_MS = 2500; // time each frame is fully visible before cross-fade
+const SCREENS = [
+  {
+    src: "/landing/mockup_projects.png",
+    alt: "Projects list — four active construction projects with item counts",
+    label: "Your projects",
+  },
+  {
+    src: "/landing/mockup_visits.png",
+    alt: "Site visits within a project, showing open and closed snag counts",
+    label: "Site visits",
+  },
+  {
+    src: "/landing/mockup_snags.png",
+    alt: "Snags captured during a site visit, with photos and statuses",
+    label: "Snags captured",
+  },
+  {
+    src: "/landing/mockup_edit_item.png",
+    alt: "Detail of a single snag with photos, transcribed description, location, and priority",
+    label: "Detail captured",
+  },
+  {
+    src: "/landing/mockup_report.png",
+    alt: "Generated inspection report PDF showing photos with defect markers and rectification fields",
+    label: "Report ready",
+  },
+];
 
 export default function Hero() {
-  const [showReport, setShowReport] = useState(false);
-  const [paused, setPaused] = useState(false);
+  const [index, setIndex] = useState(0);
+  // Tracks whether the user has tapped at least once. Used to swap the
+  // "Tap to explore" hint for a step counter once they engage.
+  const [tapped, setTapped] = useState(false);
 
-  useEffect(() => {
-    // Respect reduced-motion preference. If user has it on, never cycle.
-    const reducedMotion =
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reducedMotion || paused) return;
+  const advance = () => {
+    setTapped(true);
+    setIndex((i) => (i + 1) % SCREENS.length);
+  };
 
-    // Two-step cycle: at HOLD_MS we cross-fade to "report"; at CYCLE_MS
-    // we reset to "snag list". Using a single setInterval works because
-    // CYCLE_MS = 2 * HOLD_MS + 2 * fade-time (matching the CSS duration).
-    const id = setInterval(() => {
-      setShowReport((s) => !s);
-    }, HOLD_MS + 500); // hold duration + half the cross-fade window
-    return () => clearInterval(id);
-  }, [paused]);
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      advance();
+    }
+  };
 
   return (
     <section className="relative px-6 lg:px-8 pt-16 lg:pt-24 pb-20 lg:pb-32">
       <div className="max-w-6xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-          {/* Left column: copy */}
+          {/* Left: copy */}
           <div>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[var(--text-primary)] leading-[1.05]">
               Walk the site.
@@ -85,10 +104,10 @@ export default function Hero() {
                 Try free, no card →
               </Link>
               <a
-                href="#how-it-works"
+                href="#pricing"
                 className="inline-flex items-center justify-center px-6 py-3 border border-[var(--border)] hover:border-[var(--text-secondary)] text-[var(--text-primary)] font-semibold rounded-lg transition-colors"
               >
-                See how it works ↓
+                See pricing ↓
               </a>
             </div>
 
@@ -97,67 +116,75 @@ export default function Hero() {
             </p>
           </div>
 
-          {/* Right column: animated phone-frame stack.
-              Two phones overlap; the front one cross-fades between the two
-              source images.
-              On lg+ both phones are visible side-by-side with the active
-              one slightly forward. On smaller screens we show just one
-              phone-frame and let the cross-fade do the storytelling. */}
-          <div
-            className="relative flex justify-center items-center min-h-[500px] lg:min-h-[600px]"
-            onMouseEnter={() => setPaused(true)}
-            onMouseLeave={() => setPaused(false)}
-          >
-            {/* Background phone — the "after" state, slightly tilted right.
-                Hidden on mobile for visual simplicity; on desktop it gives
-                depth and previews the report even before the cross-fade. */}
-            <div
-              className="hidden lg:block absolute right-0 top-1/2 -translate-y-1/2 w-[260px] aspect-[9/19] rounded-[2rem] overflow-hidden border border-[var(--border)] bg-[var(--card)] shadow-2xl shadow-black/20 rotate-3 opacity-60"
-              aria-hidden="true"
-            >
-              <Image
-                src="/landing/mockup_report.png"
-                alt=""
-                fill
-                sizes="260px"
-                className="object-cover"
-              />
-            </div>
+          {/* Right: interactive phone.
+              All images render with object-contain. Frame bg matches the
+              cream tone of the mockup screenshots, so the letterboxing
+              top/bottom blends into the frame and reads as one
+              continuous surface. */}
+          <div className="flex flex-col items-center justify-center">
+            <div className="relative">
+              <button
+                type="button"
+                onClick={advance}
+                onKeyDown={onKeyDown}
+                aria-label={`Workflow demo — currently showing: ${SCREENS[index].label}. Tap or press Enter to advance to the next screen.`}
+                className="relative w-[260px] sm:w-[280px] lg:w-[300px] aspect-[9/19] rounded-[2rem] overflow-hidden border border-[var(--border)] shadow-2xl shadow-black/30 cursor-pointer transition-transform hover:scale-[1.02] active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)]"
+                style={{ backgroundColor: FRAME_BG }}
+              >
+                {SCREENS.map((screen, i) => (
+                  <Image
+                    key={screen.src}
+                    src={screen.src}
+                    alt={i === index ? screen.alt : ""}
+                    fill
+                    priority={i === 0}
+                    sizes="(max-width: 768px) 70vw, 300px"
+                    className={`absolute inset-0 object-contain transition-opacity duration-500 ${
+                      i === index ? "opacity-100" : "opacity-0"
+                    }`}
+                    aria-hidden={i !== index}
+                  />
+                ))}
+              </button>
 
-            {/* Foreground phone — cross-fades between snag list and report.
-                Both images are stacked; opacity flips between them every
-                HOLD_MS. transition-opacity gives the smooth fade. */}
-            <div className="relative w-[280px] lg:w-[300px] aspect-[9/19] rounded-[2rem] overflow-hidden border border-[var(--border)] bg-[var(--card)] shadow-2xl shadow-black/30 z-10">
-              {/* Snag list — base layer */}
-              <Image
-                src="/landing/mockup_snags.png"
-                alt="VoxSite app showing a site visit with four snag items, photos, descriptions, and statuses"
-                fill
-                priority
-                sizes="(max-width: 768px) 70vw, 300px"
-                className={`object-cover transition-opacity duration-500 ${
-                  showReport ? "opacity-0" : "opacity-100"
-                }`}
-              />
-              {/* Report — overlay layer */}
-              <Image
-                src="/landing/mockup_report.png"
-                alt=""
-                fill
-                sizes="(max-width: 768px) 70vw, 300px"
-                className={`object-cover absolute inset-0 transition-opacity duration-500 ${
-                  showReport ? "opacity-100" : "opacity-0"
-                }`}
-                aria-hidden="true"
-              />
-            </div>
+              {/* Step indicator dots — visual progress through the demo.
+                  Clickable so user can jump backwards or to any step. */}
+              <div className="flex justify-center gap-2 mt-4">
+                {SCREENS.map((screen, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => {
+                      setTapped(true);
+                      setIndex(i);
+                    }}
+                    aria-label={`Go to step ${i + 1}: ${screen.label}`}
+                    className={`h-1.5 rounded-full transition-all ${
+                      i === index
+                        ? "bg-brand w-6"
+                        : "bg-[var(--border)] w-1.5 hover:bg-[var(--text-muted)]"
+                    }`}
+                  />
+                ))}
+              </div>
 
-            {/* Subtle caption that updates with the active frame.
-                Reinforces "site visit" → "report" narrative for users
-                who don't notice the cross-fade. */}
-            <p className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-xs text-[var(--text-muted)] whitespace-nowrap">
-              {showReport ? "↑ Report ready to send" : "↑ Snag in progress"}
-            </p>
+              {/* Caption — current screen label + tap hint.
+                  Hint disappears after first tap so it doesn't feel pleading. */}
+              <div className="mt-4 text-center min-h-[2.5rem]">
+                <p className="text-sm font-medium text-[var(--text-primary)]">
+                  {SCREENS[index].label}
+                </p>
+                {!tapped ? (
+                  <p className="mt-1 text-xs text-[var(--text-muted)]">
+                    Tap to explore →
+                  </p>
+                ) : (
+                  <p className="mt-1 text-xs text-[var(--text-muted)]">
+                    {index + 1} / {SCREENS.length}
+                  </p>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
