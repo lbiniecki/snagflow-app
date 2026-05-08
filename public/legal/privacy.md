@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last updated:** 3 May 2026 · Effective immediately
+**Last updated:** 8 May 2026 · Effective immediately
 
 This Privacy Policy explains how VoxSite collects, uses, stores and protects your personal data. We are committed to handling your data responsibly and in compliance with the EU General Data Protection Regulation (GDPR), the Polish Personal Data Protection Act, and the UK GDPR.
 
@@ -24,7 +24,7 @@ For data protection purposes:
 - We act as **data controller** for account, billing, and usage data that identifies you as our customer.
 - We act as **data processor** for the inspection data you enter into the platform (site visits, snag items, photos, voice notes). You — the customer — are the controller for that data.
 
-Where you process personal data of third parties (for example, photos of a building site that incidentally include people) through VoxSite, you are the controller and we are your processor. A Data Processing Agreement (DPA) meeting the requirements of GDPR Article 28 is available on request for business customers — contact sales@voxsite.app.
+Where you process personal data of third parties (for example, photos of a building site that incidentally include people) through VoxSite, you are the controller and we are your processor. Our [Data Processing Agreement](/dpa) (DPA) meets the requirements of GDPR Article 28 and is incorporated into our Terms of Service by reference. A countersigned PDF copy is available for procurement records on request — contact sales@voxsite.app.
 
 **Data Protection Officer.** We have not appointed a formal Data Protection Officer as we are not legally required to do so under GDPR Article 37. Privacy queries are handled directly by the controller of the legal entity above.
 
@@ -278,7 +278,7 @@ Your continued use of VoxSite after changes take effect constitutes acceptance o
 
 ## 15. Contact us
 
-For any privacy-related question, data subject request, or to request a Data Processing Agreement:
+For any privacy-related question, data subject request, or to request a countersigned copy of our [Data Processing Agreement](/dpa):
 
 Email: sales@voxsite.app
 Post: Łukasz Biniecki Lbicon Projektowanie Konstrukcji, ul. Unruga 65a, 30-394 Kraków, Poland
