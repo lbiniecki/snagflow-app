@@ -12,6 +12,7 @@ import CaptureScreen from "@/components/CaptureScreen";
 import PricingScreen from "@/components/PricingScreen";
 import SettingsScreen from "@/components/SettingsScreen";
 import OfflineBanner from "@/components/OfflineBanner";
+import PendingCancellationBanner from "@/components/PendingCancellationBanner";
 import Toast from "@/components/Toast";
 import { ConfirmProvider } from "@/components/ConfirmDialog";
 
@@ -123,6 +124,7 @@ function AppShellInner() {
   return (
     <ConfirmProvider>
       <OfflineBanner />
+      <PendingCancellationBanner />
       {screen === "login" && <LoginScreen />}
       {screen === "projects" && <ProjectsScreen />}
       {screen === "visits" && <SiteVisitsScreen />}
