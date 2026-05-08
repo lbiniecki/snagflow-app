@@ -1,5 +1,5 @@
 // VoxSite Service Worker — caches app shell for offline launch
-const CACHE_NAME = 'voxsite-v1';
+const CACHE_NAME = 'voxsite-v2';
 
 // Install: cache essential files
 self.addEventListener('install', (event) => {
@@ -7,6 +7,7 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll([
         '/',
+        '/app',
         '/manifest.json',
         '/icon-192.png',
         '/icon-512.png',
@@ -30,8 +31,12 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Skip non-GET and API requests
-  if (event.request.method !== 'GET' || url.pathname.startsWith('/api')) {
+  // Skip non-GET, API requests, and non-http(s) protocols (chrome-extension://, etc)
+  if (
+    event.request.method !== 'GET' ||
+    url.pathname.startsWith('/api') ||
+    (url.protocol !== 'http:' && url.protocol !== 'https:')
+  ) {
     return;
   }
 
@@ -46,8 +51,8 @@ self.addEventListener('fetch', (event) => {
         return response;
       })
       .catch(() => {
-        // Offline: serve from cache
-        return caches.match(event.request).then((cached) => cached || caches.match('/'));
+        // Offline: serve from cache, fall back to /app for installed users
+        return caches.match(event.request).then((cached) => cached || caches.match('/app'));
       })
   );
 });
