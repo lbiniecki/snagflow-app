@@ -1,6 +1,6 @@
 # Terms of Service
 
-**Last updated:** 3 May 2026 · Effective immediately
+**Last updated:** 8 May 2026 · Effective immediately
 
 Please read these Terms of Service carefully before using VoxSite. By creating an account or using the service, you agree to be bound by these terms.
 
@@ -153,7 +153,7 @@ For inspection data (projects, snags, photos, voice notes), we act as a data pro
 
 If your use of VoxSite involves processing personal data of third parties (for example, workers photographed on site), you are responsible for the lawful basis and for meeting any notice obligations to those individuals.
 
-A Data Processing Agreement (DPA) meeting the requirements of GDPR Article 28 is available on request for business customers. Contact sales@voxsite.app.
+Our [Data Processing Agreement](/dpa) (DPA) meets the requirements of GDPR Article 28 and is incorporated into these Terms by reference. A countersigned PDF copy is available for procurement records on request — contact sales@voxsite.app.
 
 ### 7.3 Voice transcription
 
