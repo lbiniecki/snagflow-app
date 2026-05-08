@@ -26,7 +26,7 @@ export default function PendingCancellationBanner() {
   const [planData, setPlanData] = useState<PlanUsage | null>(null);
   const [reactivating, setReactivating] = useState(false);
   const showToast = useStore((s) => s.showToast);
-  const auth = useStore((s) => s.auth);
+  const user = useStore((s) => s.user);
 
   const refresh = useCallback(async () => {
     try {
@@ -41,12 +41,12 @@ export default function PendingCancellationBanner() {
   // auth identity changes (login, account switch). Note: `auth` is the
   // store value; the dependency on its identity is intentional.
   useEffect(() => {
-    if (!auth?.id) {
+    if (!user?.id) {
       setPlanData(null);
       return;
     }
     refresh();
-  }, [auth?.id, refresh]);
+  }, [user?.id, refresh]);
 
   const handleReactivate = async () => {
     if (reactivating) return;
