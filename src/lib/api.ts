@@ -23,6 +23,10 @@ export interface SiteVisit {
   visit_no: number;
   visit_ref?: string | null;  // Optional display override (e.g. "MIL-V01"); null/empty = use visit_no
   visit_date: string;
+  /** Engineer-controlled date printed on the report cover. ISO YYYY-MM-DD.
+   *  Backfilled to equal visit_date on existing rows; updated whenever
+   *  the user picks a new date in the report-generation modal. */
+  report_date?: string;
   weather: string;
   status: "open" | "closed";
   inspector: string;
@@ -154,21 +158,6 @@ export interface PlanUsage {
     snags_this_month: boolean;
     users: boolean;
   };
-  /**
-   * Stripe subscription state. Empty object when no active subscription
-   * or when Stripe was unreachable when /plan was served. Never null —
-   * the backend deliberately returns {} on error so the UI can guard
-   * with `subscription.cancel_at_period_end` without optional chaining
-   * traps.
-   */
-  subscription: {
-    cancel_at_period_end?: boolean;
-    /** Unix timestamp in seconds. Convert with `new Date(value * 1000)`. */
-    current_period_end?: number;
-  };
-  /** True if the current user owns the company. Used by pending-cancel
-   *  banner to decide whether to show the Reactivate button. */
-  is_owner: boolean;
 }
 
 /** Matches the backend UNLIMITED sentinel. Keep in sync with plan_limits.py. */
@@ -490,7 +479,7 @@ export const transcription = {
 export const reports = {
   async downloadPdf(
     projectId: string,
-    opts?: { visitId?: string; weather?: string; visitNo?: string }
+    opts?: { visitId?: string; weather?: string; visitNo?: string; reportDate?: string }
   ) {
     const token = getToken();
     const params = new URLSearchParams({
@@ -500,6 +489,7 @@ export const reports = {
     if (opts?.visitId) params.set("visit_id", opts.visitId);
     if (opts?.weather) params.set("weather", opts.weather);
     if (opts?.visitNo) params.set("visit_no", opts.visitNo);
+    if (opts?.reportDate) params.set("report_date", opts.reportDate);
 
     const res = await fetch(
       `${API_BASE}/reports/${projectId}?${params}`,
@@ -578,6 +568,7 @@ export const reports = {
       visitNo?: string;
       message?: string;
       includeClosed?: boolean;
+      reportDate?: string;
     }
   ) {
     return apiFetch<{
@@ -594,6 +585,7 @@ export const reports = {
         visit_no: opts.visitNo,
         message: opts.message,
         include_closed: opts.includeClosed ?? true,
+        report_date: opts.reportDate,
       }),
     });
   },
@@ -709,21 +701,6 @@ export const billing = {
 
   createPortal() {
     return apiFetch<{ portal_url: string }>("/billing/portal", {
-      method: "POST",
-    });
-  },
-
-  /**
-   * Reactivate a subscription scheduled to cancel at period end.
-   * Returns { ok: true, already_active?: boolean, current_period_end?: number }.
-   * Owner-only on the backend; member calls return 403.
-   */
-  reactivate() {
-    return apiFetch<{
-      ok: boolean;
-      already_active?: boolean;
-      current_period_end?: number;
-    }>("/billing/reactivate", {
       method: "POST",
     });
   },

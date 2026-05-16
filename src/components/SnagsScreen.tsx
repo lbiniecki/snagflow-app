@@ -7,7 +7,7 @@ import { useOnlineStatus } from "@/lib/useOnlineStatus";
 import { getPendingForVisit, getPendingSnags, type PendingSnag } from "@/lib/offlineStore";
 import {
   ChevronLeft, FileText, Plus, Pencil, Trash2, Camera,
-  MapPin, Download, X, WifiOff, CloudUpload, Mail,
+  MapPin, Download, X, WifiOff, CloudUpload, Mail, Calendar,
 } from "lucide-react";
 import clsx from "clsx";
 import BottomNav from "./BottomNav";
@@ -33,6 +33,37 @@ export default function SnagsScreen() {
   const [emailRecipients, setEmailRecipients] = useState("");
   const [emailMessage, setEmailMessage] = useState("");
   const [sendingEmail, setSendingEmail] = useState(false);
+
+  // ── Report-date picker state ──────────────────────────────────
+  // The "issue date" printed on the report cover. Independent of
+  // visit_date (when site walk happened) and generation timestamp
+  // (no longer shown). User picks/edits per generation; persists to
+  // the visit so regenerating later shows the same date.
+  //
+  // Pre-fill priority: visit's stored report_date → today.
+  //
+  // The dedicated modal opens when the user clicks "Download PDF".
+  // The Email flow uses the same `reportDate` state but exposes the
+  // date picker inline within the email modal instead of a separate
+  // step.
+  const [showReportDateModal, setShowReportDateModal] = useState(false);
+  const [reportDate, setReportDate] = useState("");
+
+  const todayYYYYMMDD = () => {
+    const d = new Date();
+    // Build YYYY-MM-DD in the user's local timezone, not UTC.
+    // toISOString() returns UTC which can be off by a day for users
+    // east/west of UTC at the day boundary.
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
+  // Resolve the initial value for the date picker. Read from the visit
+  // each time the modal opens — the visit might have been updated by
+  // a previous generation in this same session.
+  const initialReportDate = () => currentVisit?.report_date || todayYYYYMMDD();
 
   const closePhotoRef = useRef<HTMLInputElement>(null);
   const [closingSnagId, setClosingSnagId] = useState<string | null>(null);
@@ -121,15 +152,44 @@ export default function SnagsScreen() {
     }
   };
 
-  const handleDownloadPdf = async () => {
+  /**
+   * "Download PDF" entry point. Doesn't actually download — opens the
+   * date-picker modal first. The real download happens in
+   * confirmReportDateAndDownload below when the user confirms.
+   */
+  const openDownloadFlow = () => {
     if (!currentProject) return;
+    setReportDate(initialReportDate());
+    setShowReportDateModal(true);
+  };
+
+  /**
+   * Triggered from the date-picker modal's confirm button. Validates,
+   * calls the API with the picked date, and closes the modal on
+   * success. Backend persists the date to the visit so the next
+   * regeneration pre-fills the same value.
+   */
+  const confirmReportDateAndDownload = async () => {
+    if (!currentProject) return;
+    if (!reportDate) {
+      showToast("Pick a date");
+      return;
+    }
     setDownloading(true);
     try {
       await reportsApi.downloadPdf(currentProject.id, {
         visitId: currentVisit?.id,
         weather: currentVisit?.weather || "",
         visitNo: String(currentVisit?.visit_no || ""),
+        reportDate,
       });
+      // Reflect the new value locally so re-opening the modal in the
+      // same session shows the date the user just picked. The visit
+      // object in the store doesn't auto-refresh.
+      if (currentVisit) {
+        currentVisit.report_date = reportDate;
+      }
+      setShowReportDateModal(false);
       showToast("Report downloaded");
     } catch (err: any) {
       showToast(err.message);
@@ -171,6 +231,7 @@ export default function SnagsScreen() {
         weather: currentVisit?.weather || "",
         visitNo: String(currentVisit?.visit_no || ""),
         message: emailMessage.trim() || undefined,
+        reportDate,
       });
 
       const countLabel = `${recipients.length} recipient${recipients.length === 1 ? "" : "s"}`;
@@ -179,6 +240,11 @@ export default function SnagsScreen() {
           ? ` (${res.size_mb} MB — sent as download link)`
           : ` (${res.size_mb} MB — attached)`;
       showToast(`Report sent to ${countLabel}${modeLabel}`);
+
+      // Reflect the new value locally so re-opening shows what the user picked
+      if (currentVisit && reportDate) {
+        currentVisit.report_date = reportDate;
+      }
 
       // Clear state on success
       setShowEmailModal(false);
@@ -317,7 +383,7 @@ export default function SnagsScreen() {
   };
 
   // Hide bottom nav when any modal is open
-  const modalOpen = showReport || showEmailModal;
+  const modalOpen = showReport || showEmailModal || showReportDateModal;
   const visitClosed = currentVisit?.status === "closed";
 
   return (
@@ -524,7 +590,10 @@ export default function SnagsScreen() {
               <h3 className="text-lg font-bold text-[var(--text-primary)]">Inspection Report</h3>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setShowEmailModal(true)}
+                  onClick={() => {
+                    setReportDate(initialReportDate());
+                    setShowEmailModal(true);
+                  }}
                   className="flex items-center gap-1.5 px-3 py-2 bg-[var(--surface)] text-[var(--text-primary)] rounded-lg text-xs font-semibold hover:bg-[var(--bg3)]"
                   title="Email this report"
                 >
@@ -532,7 +601,7 @@ export default function SnagsScreen() {
                   Email
                 </button>
                 <button
-                  onClick={handleDownloadPdf}
+                  onClick={openDownloadFlow}
                   disabled={downloading}
                   className="flex items-center gap-1.5 px-3.5 py-2 bg-brand text-white rounded-lg text-xs font-semibold"
                 >
@@ -655,6 +724,24 @@ export default function SnagsScreen() {
               .
             </p>
 
+            {/* Report issue date — same field as the Download flow,
+                inlined here so emailing requires only one modal. */}
+            <div className="mb-3">
+              <label className="text-xs font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">
+                Report date
+              </label>
+              <input
+                type="date"
+                value={reportDate}
+                onChange={(e) => setReportDate(e.target.value)}
+                disabled={sendingEmail}
+                className="w-full px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] outline-none focus:border-brand transition-colors"
+              />
+              <p className="text-xs text-[var(--text3)] mt-1">
+                Printed on the report cover and Document Control Sheet.
+              </p>
+            </div>
+
             {/* Recipients */}
             <div className="mb-3">
               <label className="text-xs font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">
@@ -717,6 +804,90 @@ export default function SnagsScreen() {
                   <>
                     <Mail className="w-4 h-4" />
                     Send
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Report-date picker modal — opens from "Download PDF". Lets the
+          user choose the date printed on the cover before generation.
+          Pre-filled with the visit's stored report_date (or today if
+          unset). Confirming triggers the actual download and persists
+          the date to the visit via the backend's /reports endpoint. */}
+      {showReportDateModal && (
+        <div
+          className="fixed inset-0 bg-black/70 z-[60] flex items-end justify-center animate-fade-in"
+          onClick={() => !downloading && setShowReportDateModal(false)}
+        >
+          <div
+            className="w-full max-w-[480px] max-h-[85vh] bg-[var(--bg2)] rounded-t-2xl p-5 overflow-y-auto animate-slide-up"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 bg-[var(--border)] rounded-full mx-auto mb-4" />
+
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold flex items-center gap-2 text-[var(--text-primary)]">
+                <Calendar className="w-4 h-4 text-brand" />
+                Report date
+              </h3>
+              <button
+                onClick={() => setShowReportDateModal(false)}
+                disabled={downloading}
+                className="p-1.5 rounded-full hover:bg-[var(--bg3)] text-[var(--text2)] disabled:opacity-50"
+                aria-label="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-[12px] text-[var(--text3)] mb-4">
+              Pick the date to print on the report for{" "}
+              <span className="text-[var(--text-primary)] font-semibold">
+                {currentProject?.name}
+              </span>
+              {currentVisit && ` · Visit ${currentVisit.visit_ref || currentVisit.visit_no}`}
+              .
+            </p>
+
+            <div className="mb-4">
+              <label className="text-xs font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">
+                Date of report
+              </label>
+              <input
+                type="date"
+                value={reportDate}
+                onChange={(e) => setReportDate(e.target.value)}
+                disabled={downloading}
+                className="w-full px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] outline-none focus:border-brand transition-colors"
+                autoFocus
+              />
+              <p className="text-xs text-[var(--text3)] mt-1">
+                Shown on the cover page and the Document Control Sheet.
+              </p>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowReportDateModal(false)}
+                disabled={downloading}
+                className="flex-1 h-11 bg-[var(--surface)] hover:bg-[var(--bg3)] text-[var(--text-primary)] font-semibold rounded-lg transition-all disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmReportDateAndDownload}
+                disabled={downloading || !reportDate}
+                className="flex-1 h-11 bg-brand hover:bg-brand-light text-white font-semibold rounded-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {downloading ? (
+                  "Generating…"
+                ) : (
+                  <>
+                    <Download className="w-4 h-4" />
+                    Download
                   </>
                 )}
               </button>
