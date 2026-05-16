@@ -494,7 +494,17 @@ export const transcription = {
 export const reports = {
   async downloadPdf(
     projectId: string,
-    opts?: { visitId?: string; weather?: string; visitNo?: string; reportDate?: string }
+    opts?: {
+      visitId?: string;
+      weather?: string;
+      visitNo?: string;
+      reportDate?: string;
+      /** "preview" (default) generates a working copy with no state change.
+       *  "issue" records this PDF as the next sequential Issue N in the
+       *  visit's history table. Backend rejects "issue" without a
+       *  reportDate. */
+      mode?: "preview" | "issue";
+    }
   ) {
     const token = getToken();
     const params = new URLSearchParams({
@@ -505,6 +515,7 @@ export const reports = {
     if (opts?.weather) params.set("weather", opts.weather);
     if (opts?.visitNo) params.set("visit_no", opts.visitNo);
     if (opts?.reportDate) params.set("report_date", opts.reportDate);
+    if (opts?.mode) params.set("mode", opts.mode);
 
     const res = await fetch(
       `${API_BASE}/reports/${projectId}?${params}`,
@@ -584,6 +595,8 @@ export const reports = {
       message?: string;
       includeClosed?: boolean;
       reportDate?: string;
+      /** "preview" (default) or "issue" — see downloadPdf comment. */
+      mode?: "preview" | "issue";
     }
   ) {
     return apiFetch<{
@@ -601,6 +614,7 @@ export const reports = {
         message: opts.message,
         include_closed: opts.includeClosed ?? true,
         report_date: opts.reportDate,
+        mode: opts.mode,
       }),
     });
   },

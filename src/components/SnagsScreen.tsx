@@ -164,12 +164,19 @@ export default function SnagsScreen() {
   };
 
   /**
-   * Triggered from the date-picker modal's confirm button. Validates,
-   * calls the API with the picked date, and closes the modal on
-   * success. Backend persists the date to the visit so the next
-   * regeneration pre-fills the same value.
+   * Triggered from the date-picker modal's buttons. Both "Preview PDF"
+   * and "Issue this report" call this with their respective mode.
+   *
+   * - mode="preview": generates a working copy. No state change.
+   *   If the visit has prior issues, the PDF cover marks itself as a
+   *   working copy (so it can't be mistaken for the official version).
+   *
+   * - mode="issue": backend records a new row in report_issues with
+   *   the next sequential issue_no for the visit. PDF cover stamps
+   *   "Issue N". Soft lock — visit/snags can still be edited
+   *   afterwards but the engineer accepts the workflow consequence.
    */
-  const confirmReportDateAndDownload = async () => {
+  const submitReport = async (mode: "preview" | "issue") => {
     if (!currentProject) return;
     if (!reportDate) {
       showToast("Pick a date");
@@ -182,21 +189,28 @@ export default function SnagsScreen() {
         weather: currentVisit?.weather || "",
         visitNo: String(currentVisit?.visit_no || ""),
         reportDate,
+        mode,
       });
-      // Reflect the new value locally so re-opening the modal in the
-      // same session shows the date the user just picked. The visit
-      // object in the store doesn't auto-refresh.
+      // Reflect the date locally so re-opening the modal in the
+      // same session shows what the user just picked.
       if (currentVisit) {
         currentVisit.report_date = reportDate;
       }
       setShowReportDateModal(false);
-      showToast("Report downloaded");
+      if (mode === "issue") {
+        showToast("Report issued and downloaded");
+      } else {
+        showToast("Working copy downloaded");
+      }
     } catch (err: any) {
       showToast(err.message);
     } finally {
       setDownloading(false);
     }
   };
+
+  /** @deprecated alias kept for any stragglers — use submitReport directly */
+  const confirmReportDateAndDownload = () => submitReport("preview");
 
   /**
    * Parse a free-form text field into a list of recipient emails.
@@ -869,27 +883,58 @@ export default function SnagsScreen() {
               </p>
             </div>
 
-            <div className="flex gap-2">
+            {/* Issue-vs-preview explainer + warning */}
+            <div className="mb-4 p-3 bg-[var(--bg)] border border-[var(--border)] rounded-lg space-y-2">
+              <p className="text-xs text-[var(--text2)] leading-relaxed">
+                <span className="font-semibold text-[var(--text-primary)]">Preview PDF</span>
+                {" "}generates a working copy. Use it for sharing drafts or checking
+                layout. Nothing is recorded.
+              </p>
+              <p className="text-xs text-[var(--text2)] leading-relaxed">
+                <span className="font-semibold text-[var(--text-primary)]">Issue this report</span>
+                {" "}records the next official issue in the Document Control Sheet.
+                After a report is issued you should not edit the visit content —
+                clients receiving the PDF shouldn&apos;t see different versions
+                with the same issue number. If you need a change later, issue
+                a revision.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-2">
               <button
-                onClick={() => setShowReportDateModal(false)}
-                disabled={downloading}
-                className="flex-1 h-11 bg-[var(--surface)] hover:bg-[var(--bg3)] text-[var(--text-primary)] font-semibold rounded-lg transition-all disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmReportDateAndDownload}
+                onClick={() => submitReport("preview")}
                 disabled={downloading || !reportDate}
-                className="flex-1 h-11 bg-brand hover:bg-brand-light text-white font-semibold rounded-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full h-11 bg-[var(--surface)] hover:bg-[var(--bg3)] text-[var(--text-primary)] font-semibold rounded-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {downloading ? (
-                  "Generating…"
+                  "Working…"
                 ) : (
                   <>
                     <Download className="w-4 h-4" />
-                    Download
+                    Preview PDF
                   </>
                 )}
+              </button>
+              <button
+                onClick={() => submitReport("issue")}
+                disabled={downloading || !reportDate}
+                className="w-full h-11 bg-brand hover:bg-brand-light text-white font-semibold rounded-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {downloading ? (
+                  "Working…"
+                ) : (
+                  <>
+                    <FileText className="w-4 h-4" />
+                    Issue this report
+                  </>
+                )}
+              </button>
+              <button
+                onClick={() => setShowReportDateModal(false)}
+                disabled={downloading}
+                className="w-full h-10 text-[var(--text3)] hover:text-[var(--text-primary)] text-sm transition-colors disabled:opacity-50"
+              >
+                Cancel
               </button>
             </div>
           </div>
