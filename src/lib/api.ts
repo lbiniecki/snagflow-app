@@ -43,6 +43,11 @@ export interface SiteVisit {
   snag_count?: number;
   open_count?: number;
   closed_count?: number;
+  // Issue history counts. issue_count is the number of rows in
+  // report_issues for this visit; latest_issue_no is the max issue_no.
+  // Both default to 0 / 0 when nothing has been issued.
+  issue_count?: number;
+  latest_issue_no?: number;
 }
 
 export interface Snag {

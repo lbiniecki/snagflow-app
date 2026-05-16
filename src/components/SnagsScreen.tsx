@@ -33,6 +33,11 @@ export default function SnagsScreen() {
   const [emailRecipients, setEmailRecipients] = useState("");
   const [emailMessage, setEmailMessage] = useState("");
   const [sendingEmail, setSendingEmail] = useState(false);
+  // "preview" (default) attaches a working-copy PDF. "issue" records a
+  // new Issue N before generating, same as the Download flow's Issue
+  // button. Defaults to preview because most email sends are drafts —
+  // explicit opt-in for issuing avoids accidental issuance.
+  const [emailMode, setEmailMode] = useState<"preview" | "issue">("preview");
 
   // ── Report-date picker state ──────────────────────────────────
   // The "issue date" printed on the report cover. Independent of
@@ -196,6 +201,12 @@ export default function SnagsScreen() {
       if (currentVisit) {
         currentVisit.report_date = reportDate;
       }
+      // If we just issued, bump the local issue counts so the badge
+      // appears immediately without a visits refresh.
+      if (currentVisit && mode === "issue") {
+        currentVisit.latest_issue_no = (currentVisit.latest_issue_no ?? 0) + 1;
+        currentVisit.issue_count = (currentVisit.issue_count ?? 0) + 1;
+      }
       setShowReportDateModal(false);
       if (mode === "issue") {
         showToast("Report issued and downloaded");
@@ -246,6 +257,7 @@ export default function SnagsScreen() {
         visitNo: String(currentVisit?.visit_no || ""),
         message: emailMessage.trim() || undefined,
         reportDate,
+        mode: emailMode,
       });
 
       const countLabel = `${recipients.length} recipient${recipients.length === 1 ? "" : "s"}`;
@@ -253,17 +265,26 @@ export default function SnagsScreen() {
         res.mode === "link"
           ? ` (${res.size_mb} MB — sent as download link)`
           : ` (${res.size_mb} MB — attached)`;
-      showToast(`Report sent to ${countLabel}${modeLabel}`);
+      const issuedLabel = emailMode === "issue" ? " · Issued" : "";
+      showToast(`Report sent to ${countLabel}${modeLabel}${issuedLabel}`);
 
       // Reflect the new value locally so re-opening shows what the user picked
       if (currentVisit && reportDate) {
         currentVisit.report_date = reportDate;
+      }
+      // If we just issued, bump the local latest_issue_no so the badge
+      // appears immediately. Backend re-fetch on next visit list refresh
+      // would correct this, but the user expects to see the change now.
+      if (currentVisit && emailMode === "issue") {
+        currentVisit.latest_issue_no = (currentVisit.latest_issue_no ?? 0) + 1;
+        currentVisit.issue_count = (currentVisit.issue_count ?? 0) + 1;
       }
 
       // Clear state on success
       setShowEmailModal(false);
       setEmailRecipients("");
       setEmailMessage("");
+      setEmailMode("preview");  // reset for next time
     } catch (err: any) {
       // Backend surfaces plan-gate failures with a 403 + clear message
       showToast(err.message || "Failed to send email");
@@ -423,6 +444,20 @@ export default function SnagsScreen() {
           <p className="text-xs text-[var(--text3)]">
             {currentProject?.name}{currentVisit?.weather ? ` • ${currentVisit.weather}` : ""}
           </p>
+          {/* Issued badge — only rendered for visits that have at least
+              one row in report_issues. latest_issue_no is the max
+              issue_no across that history, returned by GET /site-visits.
+              The badge serves as the soft-lock visual reminder: after
+              issuing, the engineer should avoid editing this visit so
+              all distributed PDFs stay consistent with what was issued. */}
+          {currentVisit && (currentVisit.latest_issue_no ?? 0) > 0 && (
+            <div className="mt-1 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-brand/10 border border-brand/30">
+              <FileText className="w-3 h-3 text-brand" />
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-brand">
+                Issued · Issue {currentVisit.latest_issue_no}
+              </span>
+            </div>
+          )}
         </div>
         <button onClick={() => setShowReport(true)} className="p-2 rounded-full hover:bg-[var(--bg3)] text-[var(--text2)]">
           <FileText className="w-5 h-5" />
@@ -606,6 +641,7 @@ export default function SnagsScreen() {
                 <button
                   onClick={() => {
                     setReportDate(initialReportDate());
+                    setEmailMode("preview");
                     setShowEmailModal(true);
                   }}
                   className="flex items-center gap-1.5 px-3 py-2 bg-[var(--surface)] text-[var(--text-primary)] rounded-lg text-xs font-semibold hover:bg-[var(--bg3)]"
@@ -788,6 +824,55 @@ export default function SnagsScreen() {
                 disabled={sendingEmail}
                 className="w-full px-3.5 py-2.5 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text3)] outline-none focus:border-brand transition-colors resize-none"
               />
+            </div>
+
+            {/* Send-as-preview vs send-as-issue toggle. Mirrors the
+                Download flow's two-button split — emailing should not
+                accidentally create an official issue. Default preview;
+                explicit opt-in for issuing. */}
+            <div className="mb-4">
+              <label className="text-xs font-semibold text-[var(--text2)] uppercase tracking-wider block mb-1.5">
+                Send as
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEmailMode("preview")}
+                  disabled={sendingEmail}
+                  className={clsx(
+                    "h-11 rounded-lg border text-sm font-semibold transition-all disabled:opacity-50",
+                    emailMode === "preview"
+                      ? "bg-[var(--surface)] border-brand text-[var(--text-primary)]"
+                      : "bg-[var(--bg)] border-[var(--border)] text-[var(--text2)] hover:bg-[var(--surface)]"
+                  )}
+                >
+                  Working copy
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEmailMode("issue")}
+                  disabled={sendingEmail}
+                  className={clsx(
+                    "h-11 rounded-lg border text-sm font-semibold transition-all disabled:opacity-50",
+                    emailMode === "issue"
+                      ? "bg-brand border-brand text-white"
+                      : "bg-[var(--bg)] border-[var(--border)] text-[var(--text2)] hover:bg-[var(--surface)]"
+                  )}
+                >
+                  Issue
+                </button>
+              </div>
+              <p className="text-xs text-[var(--text3)] mt-1.5 leading-relaxed">
+                {emailMode === "preview" ? (
+                  <>Attaches a working copy. No issue is recorded — the
+                  recipient gets a draft.</>
+                ) : (
+                  <>Records the next official issue (Issue{" "}
+                  {(currentVisit?.latest_issue_no ?? 0) + 1}) before
+                  sending. After issuing, avoid editing the visit so
+                  recipients of this PDF and any later copies stay in sync.</>
+                )}
+              </p>
             </div>
 
             {/* Info note about size handling */}
