@@ -158,6 +158,21 @@ export interface PlanUsage {
     snags_this_month: boolean;
     users: boolean;
   };
+  /**
+   * Stripe subscription state. Empty object when no active subscription
+   * or when Stripe was unreachable when /plan was served. Never null —
+   * the backend deliberately returns {} on error so the UI can guard
+   * with `subscription.cancel_at_period_end` without optional chaining
+   * traps.
+   */
+  subscription: {
+    cancel_at_period_end?: boolean;
+    /** Unix timestamp in seconds. Convert with `new Date(value * 1000)`. */
+    current_period_end?: number;
+  };
+  /** True if the current user owns the company. Used by pending-cancel
+   *  banner to decide whether to show the Reactivate button. */
+  is_owner: boolean;
 }
 
 /** Matches the backend UNLIMITED sentinel. Keep in sync with plan_limits.py. */
@@ -701,6 +716,21 @@ export const billing = {
 
   createPortal() {
     return apiFetch<{ portal_url: string }>("/billing/portal", {
+      method: "POST",
+    });
+  },
+
+  /**
+   * Reactivate a subscription scheduled to cancel at period end.
+   * Returns { ok: true, already_active?: boolean, current_period_end?: number }.
+   * Owner-only on the backend; member calls return 403.
+   */
+  reactivate() {
+    return apiFetch<{
+      ok: boolean;
+      already_active?: boolean;
+      current_period_end?: number;
+    }>("/billing/reactivate", {
       method: "POST",
     });
   },
